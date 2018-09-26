@@ -3,6 +3,7 @@ import Plexon
 
 try:
     from Plexon import PlexClient
+    
     print('PlexClient')
 except:
     PlexClient = None
@@ -26,7 +27,7 @@ class testTask:
         else:
             self.plexon = None
             print('PlexClient no')
-            
+
 ##        with open(self.parsfile, 'w+') as fp:
 ##            json.dump(self.pars, fp)
 
@@ -41,10 +42,10 @@ class testTask:
                   
     def run(self):
         print('run')
-##        self.initiate = PlexClient.InitClient()
-        self.time_stamp_tick = PlexClient.GetTimeStampTick()
-        self.mark_event = PlexClient.MarkEvent()
-        self.time_stamp_array = PlexClient.GetTimeStampArrays()
+        self.initiate = Plexon.PL_InitClient
+        self.tsa = Plexon.PL_GetTimeStampArrays
+        self.tss = Plexon.PL_GetTimeStampStructures
+        self.tst = Plexon.PL_GetTimeStampTick
         #self.save()
         print('saved')
 

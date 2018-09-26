@@ -11,7 +11,7 @@ import ctypes
 import numpy as np
 ##Need to figure out which Plexon Functions are needed to import,
 ## since this file is in the same Plexon folder as those functions
-import Plexon
+#import Plexon
 import logging
 
 logger = logging.getLogger('SpikeRecord.Plexon')
@@ -80,8 +80,8 @@ class PlexClient(object):
         Sends ClientDisconnected command to the server.
         The server decrements the counter for the number of connected clients.
         """
-##        if not self.library:
-##            return
+        if not self.library:
+            return
         Plexon.PL_CloseClient()
 
     def IsSortClientRunning(self):
