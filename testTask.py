@@ -46,12 +46,24 @@ class testTask:
         self.tsa = Plexon.PL_GetTimeStampArrays
         self.tss = Plexon.PL_GetTimeStampStructures
         self.tst = Plexon.PL_GetTimeStampTick
+        self.gtsa = PlexClient.PlexClient.GetTimeStampArrays
         #self.save()
-        print('saved')
+
+    def printdata(self, myinput):
+        print(self.myinput)
+        
 
 if __name__ == '__main__':
     mytask = testTask()
     mytask.run()
+    myinput = ""
+
+    while myinput!= "quit":
+        myinput = input("Type:")
+        try:
+            mytask.printdata(mytask.myinput)
+        except:
+            print('Try again')
     mytask.teardown()
     print('Done')
     
