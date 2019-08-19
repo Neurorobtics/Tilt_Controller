@@ -5,6 +5,7 @@ import time
 import numpy
 from decimal import Decimal
 from collections import Counter
+import json
 
 #TODO: CSV for channels. Include post time window of event. Need to save population response (dict? key as event_count) from an event  so that they are all saved.
 
@@ -24,9 +25,12 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
         self.pop_current_response = []
         self.event_ts_list = []
         self.event_number_list = []
+        self.decoder_list = []
+        self.decoder_times = []
         self.total_units = 0
         self.event_count = 0
         self.current_ts = 0
+        
         self.responses = 0 ### testing number of responses
         for chan, unit_list in self.channel_dict.items():
             if chan not in self.unit_dict.keys():
@@ -34,6 +38,8 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
             for unit in unit_list:
                 self.unit_dict[chan][unit] = []
                 self.total_units = self.total_units + 1
+
+        self.unit_dict_template = self.unit_dict
     ###### build_unit will be used to gather timestamps from plexon and add them to the unit_dict which will be used to compare psth formats, etc.
     def build_unit(self, tmp_channel, tmp_unit, tmp_timestamp):
         self.unit_dict[tmp_channel][tmp_unit].append(Decimal(tmp_timestamp).quantize(Decimal('1.0000')))
@@ -46,6 +52,9 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
             self.current_event = event_unit                                     #Event number of the current event
             self.event_ts_list.append(event_ts)                                 #List of timestamps
             self.event_number_list.append(event_unit)                           #List of event number
+            return True
+        else:
+            return False
 
 
     def psth(self):
@@ -64,8 +73,8 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                 offset_ts = unit_ts - trial_ts
                 offset_ts = [Decimal(x).quantize(Decimal('1.0000')) for x in offset_ts]
                 self.binned_response = numpy.histogram(numpy.asarray(offset_ts, dtype='float'), self.total_bins, range = (-abs(self.pre_time), self.post_time))[0]
-                self.population_response = [self.population_response, self.binned_response]
-                self.population_response[(self.total_bins*self.index):(self.total_bins*(self.index+1))] = self.binned_response   #### These values will give the total bins (currently: 5) for each neuron (unit)
+                self.population_response.extend(self.binned_response)
+                #self.population_response[(self.total_bins*self.index):(self.total_bins*(self.index+1))] = self.binned_response   #### These values will give the total bins (currently: 5) for each neuron (unit)
                 pop_trial_response = [x for x in self.population_response]
                 self.index = self.index + 1
                 if self.index == self.total_units:
@@ -75,7 +84,10 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                         self.pop_total_response[self.current_event].extend(pop_trial_response)
                     self.pop_current_response = pop_trial_response
 
+        self.unit_dict = self.unit_dict_template #Reset unit_dict to save computational time later
+     
     def psthtemplate(self): #Reshape into PSTH format Trials x (Neurons x Bins) Used at the end of all trials.
+        #Counts the events
         self.event_number_count = Counter()
         for num in self.event_number_list:
             self.event_number_count[num] += 1
@@ -83,29 +95,75 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
         for event in self.pop_total_response.keys():
             self.psth_templates[event] = numpy.reshape(self.pop_total_response[event],(self.event_number_count[event], self.total_units*self.total_bins))
             self.psth_templates[event] = self.psth_templates[event].sum(axis = 0) / len(self.psth_templates[event])
+            self.psth_templates[event] = [x for x in self.psth_templates[event]]
+    
+    def decode(self):
+        tic = time.time()
+        for i in self.loaded_template.keys():
+            for j in range(self.total_units*self.total_bins):
+                self.euclidean_dists[i][j] = ((self.pop_current_response[j] - self.loaded_template[i][j])**2)**0.5
+            self.sum_euclidean_dists[i] = sum(self.euclidean_dists[i])
+        decoder_key = int(min(self.sum_euclidean_dists.keys(), key= (lambda k: self.sum_euclidean_dists[k])))
+        self.decoder_list.append(decoder_key)
+        toc = time.time() - tic
+        self.decoder_times.append(toc)
 
-    def Test(self):
+
+        #print('decoder key:', decoder_key)
+        #print('min dist:', self.sum_euclidean_dists[decoder_key])
+        if decoder_key == self.current_event:
+            print('decoder correct')
+            return True
+        else:
+            print('decoder incorrect')
+            return False
+
+        
+
+    def savetemplate(self):
+        name = input('What would you like to name the template file:')
+        with open(name +'.txt', 'w') as outfile:
+            json.dump(self.psth_templates, outfile)
+    
+    def loadtemplate(self):
+        name = input('What template file would you like to open:')
+        with open(name + '.txt') as infile:
+            data = json.load(infile)
+        self.loaded_template = data
+        self.euclidean_dists = {}
+        self.sum_euclidean_dists = {}
+        for i in data.keys():
+            zero = numpy.zeros((self.total_units*self.total_bins,), dtype = int)
+            zero_matrix = [x for x in zero]
+            self.euclidean_dists[i] = zero_matrix
+            self.sum_euclidean_dists[i] = []
+        
+    def Test(self, baseline):
         print('test')
-        # print(self.unit_dict)
-        #print(self.event_ts_list)
-        print(self.event_number_list)
-        print(self.pop_total_response)
-        print(self.psth_templates)
+        print('event list:', self.event_number_list)
+        if baseline == False:
+            print('decoder list:', self.decoder_list)
+        # print('population total response:', self.pop_total_response)
+        # print('psth templates', self.psth_templates)
         return self.psth_templates, self.pop_total_response
 
 
 
 if __name__ =='__main__':
     # Create instance of API class
-    channel_dict = {8: [2], 9: [1,2], 20: [2], 22: [2,3]} #New Format to compare Channel and Unit. 0 is unsorted
-    pre_time = 1 #seconds (This value is negative or whatever you put, ex: put 0.200 for -200 ms)
-    post_time = 1 #seconds
-    bin_size = 0.5 #seconds
+    channel_dict = {8: [2], 9: [1,2], 20: [2], 22: [2,3]} #New Format to compare Channel and Unit. 0 is unsorted. Channels are Dict Keys, Units are in each list.
+    pre_time = 0.200 #seconds (This value is negative or whatever you put, ex: put 0.200 for -200 ms)
+    post_time = 0.200 #seconds
+    bin_size = 0.05 #seconds
     # pre_total_bins = 200 #bins
     # post_total_bins = 200 #bins
     wait_for_timestamps = False
     calculate_PSTH = False
-    psthtest = PSTH(channel_dict, pre_time, post_time, bin_size)
+    baseline_recording = False
+    psthclass = PSTH(channel_dict, pre_time, post_time, bin_size)
+    
+    if baseline_recording == False:
+        psthclass.loadtemplate()
     
     ##Setup for Plexon DO
     # compatible_devices = ['PXI-6224', 'PXI-6259']
@@ -128,7 +186,7 @@ if __name__ =='__main__':
     ##End Setup for Plexon DO
     
     client = PyPlexClientTSAPI()
-    time.sleep(.5)
+
     # Connect to OmniPlex Server
     client.init_client()
 
@@ -145,43 +203,44 @@ if __name__ =='__main__':
 
             else:
                 time.sleep(.5)
-
+            tic = time.time()
             # Get accumulated timestamps
             res = client.get_ts()
 
             # Print information on the data returned
-            tic = time.time()
+            
             for t in res:
                 # Print information on spike channel 1
-                if t.Type == PL_SingleWFType and t.Channel in psthtest.channel_dict.keys() and t.Unit in psthtest.channel_dict[t.Channel]:
-                    print(('Spike Ts: {}s\t Ch: {} Unit: {} Type {}').format(t.TimeStamp, t.Channel, t.Unit, t.Type))
-                    psthtest.build_unit(t.Channel,t.Unit,t.TimeStamp)
+                if t.Type == PL_SingleWFType and t.Channel in psthclass.channel_dict.keys() and t.Unit in psthclass.channel_dict[t.Channel]:
+                    psthclass.build_unit(t.Channel,t.Unit,t.TimeStamp)
                 # Print information on events
                 if t.Type == PL_ExtEventType:
                     print(('Event Ts: {}s Ch: {} Type: {}').format(t.TimeStamp, t.Channel, t.Type))
                     if t.Channel == 257: #Channel for Strobed Events.
-                        psthtest.event(t.TimeStamp, t.Unit)
-                        psthtest.responses += 1
-                        wait_for_timestamps = True
-                        #time.sleep(post_time) #Need something to wait for posttime before calculating psth
-                        # psthtest.psth()
-                    # If Keyboard Event 8 (event channel 108) is found, stop the loop
-                    if t.Channel == 108:
-                        running = False
-                        psthtest.psthtemplate()
+                        if wait_for_timestamps == False:
+                            wait_for_timestamps = psthclass.event(t.TimeStamp, t.Unit)
+                        else:
+                            psthclass.event(t.TimeStamp,t.Unit)
+
             if calculate_PSTH == True:
-                psthtest.psth()
+                psthclass.psth()
+                if baseline_recording == False:
+                    psthclass.decode()
                 wait_for_timestamps = False
                 calculate_PSTH = False
             toc = time.time() - tic
+            print('toc: ',toc)
             timer_list.append(toc)
 
                        
 
     except KeyboardInterrupt:
         running = False
-        psthtest.psthtemplate()
+        
     print('close')
+    psthclass.psthtemplate()
     client.close_client()
+    psthclass.savetemplate()
+    x , y = psthclass.Test(baseline_recording)
+    # print("timer_list: ", timer_list)
 
-    x , y = psthtest.Test()
