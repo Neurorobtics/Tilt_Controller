@@ -193,7 +193,7 @@ class tiltclass():
             if decoderesult == True: #Change statement later for if the decoder is correct.
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.reward,None,None)
                 task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.wateron,None,None)
-                time.sleep(0.1)##### water duration --- can keep this
+                time.sleep(self.WaterDuration)##### water duration --- can keep this
                 task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
             else: ###This will be if decoder is false, have to deal with punishment tilt.
@@ -341,5 +341,3 @@ if __name__ == "__main__":
     taskinterrupt.StopTask()
     sensors.terminate()
     print('Done')
-
-
