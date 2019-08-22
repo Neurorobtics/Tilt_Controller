@@ -121,8 +121,8 @@ def LoadCellThread():
 class tiltclass():
     def __init__(self):  
         self.WaterDuration = 0.15
-        self.punish  = np.array([0,1,0,0,0,0,0,0], dtype=np.uint8)
-        self.reward  = np.array([0,1,1,0,0,0,0,0], dtype=np.uint8)
+        self.punish  = np.array([0,0,1,0,0,0,0,0], dtype=np.uint8)
+        self.reward  = np.array([0,0,1,1,0,0,0,0], dtype=np.uint8)
         self.start1  = np.array([1,0,0,1,0,0,0,0], dtype=np.uint8)
         self.start3  = np.array([1,1,0,1,0,0,0,0], dtype=np.uint8)
         self.start4  = np.array([0,0,1,1,0,0,0,0], dtype=np.uint8)
@@ -132,7 +132,10 @@ class tiltclass():
         self.tilt4   = np.array([0,0,1,1,0,0,0,0], dtype=np.uint8)
         self.tilt6   = np.array([0,1,1,1,0,0,0,0], dtype=np.uint8)
         self.begin   = np.array([0,0,0,0,0,0,0,0], dtype=np.uint8)
-        self.wateron = np.array([0,0,0,0,1,0,0,0], dtype=np.uint8)
+        self.wateron1= np.array([1,0,0,0,1,0,0,0], dtype=np.uint8)
+        self.wateron3= np.array([1,1,0,0,1,0,0,0], dtype=np.uint8)
+        self.wateron4= np.array([0,0,1,0,1,0,0,0], dtype=np.uint8)
+        self.wateron6= np.array([0,1,1,0,1,0,0,0], dtype=np.uint8)
         
         #task = Task()
         #task.CreateDOChan("/Dev4/port0/line0:7","",PyDAQmx.DAQmx_Val_ChanForAllLines)
@@ -150,15 +153,19 @@ class tiltclass():
         if int(tilts[i]) == 1:
             data = self.tilt1
             data2 = self.start1
+            wateron = self.wateron1
         elif int(tilts[i]) == 2:
             data = self.tilt3
             data2 = self.start3
+            wateron = self.wateron3
         elif int(tilts[i]) == 3:
             data = self.tilt4
             data2 = self.start4
+            wateron = self.wateron4
         elif int(tilts[i]) == 4:
             data = self.tilt6
             data2 = self.start6
+            wateron = self.wateron6
 
         #Reduce the timestamps in buffer and wait for pretime to add to buffer.
         res = client.get_ts()
@@ -192,15 +199,15 @@ class tiltclass():
             ####
             if decoderesult == True: #Change statement later for if the decoder is correct.
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.reward,None,None)
-                task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.wateron,None,None)
+                task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,wateron,None,None)
                 time.sleep(self.WaterDuration)##### water duration --- can keep this
-                task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
+                time.sleep(0.1)
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
             else: ###This will be if decoder is false, have to deal with punishment tilt.
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.punish,None,None) 
-                time.sleep(0.1)
+                time.sleep(0.5)
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
-                time.sleep(2)
+                time.sleep(0.1)
         task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
         print('delay')
         time.sleep(delay) ############################################# delay--- can keep this
