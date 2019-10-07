@@ -193,14 +193,13 @@ class tiltclass():
             if decoderesult == True: #Change statement later for if the decoder is correct.
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.reward,None,None)
                 task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.wateron,None,None)
-                time.sleep(0.1)##### water duration --- can keep this
+                time.sleep(self.WaterDuration)##### water duration --- can keep this
                 task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
             else: ###This will be if decoder is false, have to deal with punishment tilt.
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.punish,None,None) 
-                time.sleep(0.1)
+                time.sleep(self.WaterDuration)
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
-                time.sleep(2)
         task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
         print('delay')
         time.sleep(delay) ############################################# delay--- can keep this
@@ -234,8 +233,6 @@ if __name__ == "__main__":
     pre_time = 0.200 #seconds (This value is negative or whatever you put, ex: put 0.200 for -200 ms)
     post_time = 0.200 #seconds
     bin_size = 0.05 #seconds
-    # pre_total_bins = 200 #bins
-    # post_total_bins = 200 #bins
     baseline_recording = True
     psthclass = PSTH(channel_dict, pre_time, post_time, bin_size)
     tilter = tiltclass()
@@ -289,16 +286,16 @@ if __name__ == "__main__":
     
     
 
-    sensors = Process(target = LoadCellThread, args = '')
-    sensors.start()
-    tic,clk,starttic,start,starttime,running,stoprunning,startpulse,endtime,counter = initialize()
-    loop = traverseSG()
-    endgame = loop.run()
-    print('Sensors started, waiting for Start pulse from Plexon,\n press Enter to begin Tilts after starting Plexon Recording.')
-    while endgame < 2:
-        endgame = loop.run()
+    # sensors = Process(target = LoadCellThread, args = '')
+    # sensors.start()
+    # tic,clk,starttic,start,starttime,running,stoprunning,startpulse,endtime,counter = initialize()
+    # loop = traverseSG()
+    # endgame = loop.run()
+    # print('Sensors started, waiting for Start pulse from Plexon,\n press Enter to begin Tilts after starting Plexon Recording.')
+    # while endgame < 2:
+    #     endgame = loop.run()
 
-    start_time = time.time()
+
     input('Start Pulse Acquired, Press Enter to begin Tilts')
     
     
@@ -326,22 +323,20 @@ if __name__ == "__main__":
             continue
     ######################################################################################################################################################
 
-    endgame = 3
-    try:
-        print('Stop Plexon Recording.')
-        while  endgame < 4:
-            endgame = loop.waitforend()
-        stop_time = time.time()
+    # endgame = 3
+    # try:
+    #     print('Stop Plexon Recording.')
+    #     while  endgame < 4:
+    #         endgame = loop.waitforend()
+            
 
-    except KeyboardInterrupt:
-        sensors.terminate()
-        pass
+    # except KeyboardInterrupt:
+    #     sensors.terminate()
+    #     pass
 
     task.StopTask()
     taskinterrupt.StopTask()
     sensors.terminate()
     print('Done')
-    print('start time: {}'.format(start_time))
-    print('stop time: {}'.format(stop_time))
 
 
