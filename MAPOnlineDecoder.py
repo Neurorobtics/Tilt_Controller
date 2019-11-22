@@ -202,8 +202,8 @@ if __name__ =='__main__':
                 calculate_PSTH = True
 
             else:
-                time.sleep(.5)
-            tic = time.time()
+                time.sleep(.1)
+##            tic = time.time()
             # Get accumulated timestamps
             res = client.get_ts()
 
@@ -228,9 +228,9 @@ if __name__ =='__main__':
                     psthclass.decode()
                 wait_for_timestamps = False
                 calculate_PSTH = False
-            toc = time.time() - tic
-            print('toc: ',toc)
-            timer_list.append(toc)
+##            toc = time.time() - tic
+##            print('toc: ',toc)
+##            timer_list.append(toc)
 
                        
 

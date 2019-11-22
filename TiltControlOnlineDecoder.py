@@ -38,26 +38,26 @@ class StopThread(threading.Thread):
         self.taskstop.stop()
 
 def LoadCellThread():
-    Chan_list = ["Dev6/ai18", "Dev6/ai19", "Dev6/ai20", "Dev6/ai21", "Dev6/ai22", "Dev6/ai23","Dev6/ai32", "Dev6/ai33", "Dev6/ai34", "Dev6/ai35", "Dev6/ai36", "Dev6/ai37","Dev6/ai38", "Dev6/ai39", "Dev6/ai48", "Dev6/ai49", "Dev6/ai50", "Dev6/ai51",'Timestamp']
-    with nidaqmx.Task() as task, nidaqmx.Task() as taskstart:
+    Chan_list = ["Dev6/ai18", "Dev6/ai19", "Dev6/ai20", "Dev6/ai21", "Dev6/ai22", "Dev6/ai23","Dev6/ai32", "Dev6/ai33", "Dev6/ai34", "Dev6/ai35", "Dev6/ai36", "Dev6/ai37","Dev6/ai38", "Dev6/ai39", "Dev6/ai48", "Dev6/ai49", "Dev6/ai50", "Dev6/ai51", "Strobe", "Start", "Inclinometer", 'Timestamp']
+    with nidaqmx.Task() as task:
         #######################################################
-        sheetName = 'CSM001_TILT_SYNCEDLOCAL_72219_LOADCELL'
+        sheetName = 'ANM###_DATE_recording#_BMI' #csm015_112019_baseline_tilt_nohaptic_loadcell
         #######################################################
         with open(sheetName + '.csv','w+',newline='') as f:
-            ###Initialize Channels and Variables
+            ###Initialize AI Voltage Channels to record from
             task.ai_channels.add_ai_voltage_chan("Dev6/ai18:23,Dev6/ai32:39,Dev6/ai48:51")
-            ### timing to 1000 Hz
-            task.timing.cfg_samp_clk_timing(1000, sample_mode= AcquisitionType.CONTINUOUS)
-            ###Start Pulse task
-            taskstart.di_channels.add_di_chan("Dev4/port2/line5", line_grouping = LineGrouping.CHAN_PER_LINE )
-            taskstart.read(number_of_samples_per_channel=1)
+            task.ai_channels.add_ai_voltage_chan("Dev6/ai8:10")
+            ### Task Sample Clock Timing #/Dev6/PFI7
+            task.timing.cfg_samp_clk_timing(1000, source = "", sample_mode= AcquisitionType.CONTINUOUS, samps_per_chan = 1000)
+            ### Task DI Start Trigger #/Dev6/PFI8
+            task.triggers.start_trigger.cfg_dig_edge_start_trig("/Dev6/PFI8", trigger_edge = Edge.RISING)
             ###Initiate Variables
             samples = 1000
             channels = len(Chan_list) - 1
             counter = 0
             ###Collects data and time
             data = [[0 for i in range(samples)] for i in range(channels)]
-            tic = round(time.time(),3)
+            tic = round(0,3)
             #toc = round((time.time()-tic),3)
             ###Process time
             ticsamps = np.linspace(tic,(tic+1),samples)
@@ -68,36 +68,25 @@ def LoadCellThread():
             total = samples*len(data)
             channelList = np.zeros(total).reshape(len(data),samples)
             running = True
-            writer = csv.writer(f)
-            wait_start = True
-            ###Wait for Start Pulse
-            while wait_start == True:
-                ex = taskstart.read(number_of_samples_per_channel=1)
-                print(ex)
-                if ex == True or ex == [True]:
-                    endtiming = 0
-                    taskstart.stop()
-                    wait_start = False
-                    csvrunlogging = True
-                    print('start stop thread')
-                    taskstopthread = StopThread()
-                    print('open csv')
-
-
-
-
+            taskstopthread = StopThread()
 
             ##############Read and Record Continuous Loop
             writer = csv.writer(f)
             writer.writerow(Chan_list)
-            print('start')
+            print('Start sort client')
+            task.start()
             while running == True:
-                data = task.read(samples)
-                if counter ==0:
-                    tic = round(time.time(),3)
+##                try:
+                if counter == 0:
+                    data = task.read(samples, -1)
+                    tic = round(0,3)
                     counter = counter + 1
                 else:
+                    print('loop')
+                    data = task.read(samples)
+##                    data = task.register_every_n_samples_acquired_into_buffer_event(1000, callbackloop)
                     tic = tic + 1.001
+                    counter = counter + 1
                 ticsamps = np.linspace(tic,(tic+1),samples)
                 ticsamps = ticsamps.tolist()
                 data.append(ticsamps)
@@ -109,9 +98,12 @@ def LoadCellThread():
                     writer.writerow(row)
                 stahp = taskstopthread.run()
                 if stahp ==[False]:
-                    running = False
+                    task.stop()
+                    print('writing final samples')
+##                except:
+##                    print('break')
+##                    break
             print('done')
-            task.stop()
             taskstopthread.end()
             #############End of LoadCells
 
@@ -145,7 +137,7 @@ class tiltclass():
 
     
     def tilt(self,i,task,taskinterrupt,tilts,psthclass,client,baseline_recording):  
-        delay = ((randint(1,100))/100)+1.5      
+        delay = ((randint(1,100))/100)+1.5     
         #Needs x = choose() as shown below
         if int(tilts[i]) == 1:
             data = self.tilt1
@@ -341,7 +333,6 @@ if __name__ == "__main__":
     taskinterrupt.StopTask()
     sensors.terminate()
     print('Done')
-    print('start time: {}'.format(start_time))
-    print('stop time: {}'.format(stop_time))
+
 
 
