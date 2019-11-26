@@ -126,7 +126,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
             json.dump(self.psth_templates, outfile)
     
     def loadtemplate(self):
-        name = input('What template file would you like to open:')
+        name = input('What template file would you like to open: ')
         with open(name + '.txt') as infile:
             data = json.load(infile)
         self.loaded_template = data
@@ -151,7 +151,23 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
 
 if __name__ =='__main__':
     # Create instance of API class
-    channel_dict = {8: [2], 9: [1,2], 20: [2], 22: [2,3]} #New Format to compare Channel and Unit. 0 is unsorted. Channels are Dict Keys, Units are in each list.
+    # New Format to compare Channel and Unit. 0 is unsorted. Channels are Dict Keys, Units are in each list.
+    channel_dict = {1: [1,2,3,4], 2: [1,2,3,4], 3: [1,2,3,4], 4: [1,2,3,4],
+                    5: [1,2,3,4], 6: [1,2,3,4], 7: [1,2,3,4], 8: [1,2,3,4],
+                    9: [1,2,3,4], 10: [1,2,3,4], 11: [1,2,3,4], 12: [1,2,3,4],
+                    13: [1,2,3,4], 14: [1,2,3,4], 15: [1,2,3,4], 16: [1,2,3,4],
+                    17: [1,2,3,4], 18: [1,2,3,4], 19: [1,2,3,4], 20: [1,2,3,4],
+                    21: [1,2,3,4], 22: [1,2,3,4], 23: [1,2,3,4], 24: [1,2,3,4],
+                    25: [1,2,3,4], 26: [1,2,3,4], 27: [1,2,3,4], 28: [1,2,3,4],
+                    29: [1,2,3,4], 30: [1,2,3,4], 31: [1,2,3,4], 32: [1,2,3,4],
+                    33: [1,2,3,4], 34: [1,2,3,4], 35: [1,2,3,4], 36: [1,2,3,4],
+                    37: [1,2,3,4], 38: [1,2,3,4], 39: [1,2,3,4], 40: [1,2,3,4],
+                    41: [1,2,3,4], 42: [1,2,3,4], 43: [1,2,3,4], 44: [1,2,3,4],
+                    45: [1,2,3,4], 46: [1,2,3,4], 47: [1,2,3,4], 48: [1,2,3,4],
+                    49: [1,2,3,4], 50: [1,2,3,4], 51: [1,2,3,4], 52: [1,2,3,4],
+                    53: [1,2,3,4], 54: [1,2,3,4], 55: [1,2,3,4], 56: [1,2,3,4],
+                    57: [1,2,3,4], 58: [1,2,3,4], 59: [1,2,3,4], 60: [1,2,3,4],
+                    61: [1,2,3,4], 62: [1,2,3,4], 63: [1,2,3,4], 64: [1,2,3,4],}
     pre_time = 0.200 #seconds (This value is negative or whatever you put, ex: put 0.200 for -200 ms)
     post_time = 0.200 #seconds
     bin_size = 0.05 #seconds
@@ -193,7 +209,7 @@ if __name__ =='__main__':
     running = True
     print('running')
     running = True
-    timer_list = []
+    #timer_list = []
     try:
         while running:
             # Wait half a second for data to accumulate
