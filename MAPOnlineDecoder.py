@@ -8,10 +8,6 @@ from collections import Counter
 import json
 
 #TODO: CSV for channels. Include post time window of event. Need to save population response (dict? key as event_count) from an event  so that they are all saved.
-
-
-
-
 class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which has wanted units and will catch timestamps from plexon.
     def __init__(self, channel_dict, pre_time, post_time, bin_size):
         self.pre_time = pre_time
@@ -118,8 +114,6 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
             print('decoder incorrect')
             return False
 
-        
-
     def savetemplate(self):
         name = input('What would you like to name the template file:')
         with open(name +'.txt', 'w') as outfile:
@@ -167,10 +161,10 @@ if __name__ =='__main__':
                     49: [1,2,3,4], 50: [1,2,3,4], 51: [1,2,3,4], 52: [1,2,3,4],
                     53: [1,2,3,4], 54: [1,2,3,4], 55: [1,2,3,4], 56: [1,2,3,4],
                     57: [1,2,3,4], 58: [1,2,3,4], 59: [1,2,3,4], 60: [1,2,3,4],
-                    61: [1,2,3,4], 62: [1,2,3,4], 63: [1,2,3,4], 64: [1,2,3,4],}
+                    61: [1,2,3,4], 62: [1,2,3,4], 63: [1,2,3,4], 64: [1,2,3,4]}
     pre_time = 0.200 #seconds (This value is negative or whatever you put, ex: put 0.200 for -200 ms)
     post_time = 0.200 #seconds
-    bin_size = 0.05 #seconds
+    bin_size = 0.020 #seconds
     # pre_total_bins = 200 #bins
     # post_total_bins = 200 #bins
     wait_for_timestamps = False
@@ -259,4 +253,3 @@ if __name__ =='__main__':
     psthclass.savetemplate()
     x , y = psthclass.Test(baseline_recording)
     # print("timer_list: ", timer_list)
-
