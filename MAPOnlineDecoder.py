@@ -95,7 +95,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
     
     def decode(self):
         tic = time.time()
-        for i in self.loaded_template.keys():
+        for i in self.loaded_psth_templates.keys():
             for j in range(self.total_units*self.total_bins):
                 self.euclidean_dists[i][j] = ((self.pop_current_response[j] - self.loaded_template[i][j])**2)**0.5
             self.sum_euclidean_dists[i] = sum(self.euclidean_dists[i])
@@ -115,22 +115,41 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
             return False
 
     def savetemplate(self):
+        json_event_number_dict = {'ActualEvents':self.event_number_list}
+        json_decode_number_dict = {'PredictedEvents':self.decoder_list}
+        jsondata = {}
+        jsondata.update(self.psth_templates)
+        jsondata.update(json_event_number_dict) #Tilt list Actual
+        jsondata.update(json_decode_number_dict) #Tilt list Predicted
+        #jsondata.update() #Something else?
         name = input('What would you like to name the template file:')
         with open(name +'.txt', 'w') as outfile:
-            json.dump(self.psth_templates, outfile)
+            json.dump(jsondata, outfile)
     
     def loadtemplate(self):
         name = input('What template file would you like to open: ')
         with open(name + '.txt') as infile:
             data = json.load(infile)
         self.loaded_template = data
+        self.loaded_psth_templates = {}
         self.euclidean_dists = {}
         self.sum_euclidean_dists = {}
+        self.loaded_json_event_number_dict = {}
+        self.loaded_json_decode_number_dict = {}
         for i in data.keys():
-            zero = numpy.zeros((self.total_units*self.total_bins,), dtype = int)
-            zero_matrix = [x for x in zero]
-            self.euclidean_dists[i] = zero_matrix
-            self.sum_euclidean_dists[i] = []
+            if i.isnumeric():
+                temp_psth_template = {i:data[i]}
+                self.loaded_psth_templates.update(temp_psth_templates)
+                zero = numpy.zeros((self.total_units*self.total_bins,), dtype = int)
+                zero_matrix = [x for x in zero]
+                self.euclidean_dists[i] = zero_matrix
+                self.sum_euclidean_dists[i] = []
+            else:
+                if i == 'ActualEvents':
+                    self.loaded_json_event_number_dict = {i:data[i]}
+                elif i == 'PredictedEvents':
+                    self.loaded_json_decode_number_dict = {i:data[i]}
+
         
     def Test(self, baseline):
         print('test')
