@@ -8,7 +8,7 @@ import xlwt
 import csv
 import TestRunwLoadCells
 from TestRunwLoadCells import *
-
+from sklearn.metrics import confusion_matrix
 from MAPOnlineDecoder import *
 ### TO TEST: HOW PAUSE WORKS, CHECK PRINT STATEMENTS ARE CORRECT, WHILE LOOP IS WORKING, EACH TIME.SLEEP IS CHANGED TO A DURATION
 
@@ -111,10 +111,10 @@ def LoadCellThread():
 #####################################################################################################################################################################################################################
                                                         #Tilt class beings here
 class tiltclass():
-    def __init__(self):  
+    def __init__(self):
         self.WaterDuration = 0.15
-        self.punish  = np.array([0,1,0,0,0,0,0,0], dtype=np.uint8)
-        self.reward  = np.array([0,1,1,0,0,0,0,0], dtype=np.uint8)
+        self.punish  = np.array([0,0,1,0,0,0,0,0], dtype=np.uint8)
+        self.reward  = np.array([0,0,1,1,0,0,0,0], dtype=np.uint8)
         self.start1  = np.array([1,0,0,1,0,0,0,0], dtype=np.uint8)
         self.start3  = np.array([1,1,0,1,0,0,0,0], dtype=np.uint8)
         self.start4  = np.array([0,0,1,1,0,0,0,0], dtype=np.uint8)
@@ -190,12 +190,12 @@ class tiltclass():
             if decoderesult == True: #Change statement later for if the decoder is correct.
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.reward,None,None)
                 task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.wateron,None,None)
-                time.sleep(0.1)##### water duration --- can keep this
+                time.sleep(self.WaterDuration)##### water duration --- can keep this
                 task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
             else: ###This will be if decoder is false, have to deal with punishment tilt.
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.punish,None,None) 
-                time.sleep(0.1)
+                time.sleep(0.15)
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
                 time.sleep(2)
         task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
@@ -355,6 +355,7 @@ if __name__ == "__main__":
     client.close_client()
     psthclass.savetemplate()
     print('Done')
-
+    print('actual events:y axis, predicted events:x axis')
+    print(confusion_matrix(psthclass.event_number_list,psthclass.decoder_list))
 
 
