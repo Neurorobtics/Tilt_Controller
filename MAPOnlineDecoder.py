@@ -17,13 +17,17 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
         self.channel_dict = channel_dict
         self.unit_dict = {}
         self.pop_total_response = {}
+        self.json_template_pop_total_response = {}
         self.psth_templates = {}
         self.pop_current_response = []
+        self.json_template_pop_current_response = []
         self.event_ts_list = []
         self.event_number_list = []
         self.decoder_list = []
         self.decoder_times = []
         self.total_units = 0
+        self.json_template_unit_dict = {}
+        self.json_template_total_units = 0
         self.event_count = 0
         self.current_ts = 0
         
@@ -42,7 +46,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
 
     def event(self, event_ts, event_unit):
         #Need to check that it's not a duplicate event...
-        if (event_ts - self.current_ts) > 1:        
+        if (event_ts - self.current_ts) > 1:
             self.event_count = self.event_count + 1                             #Total count of events (number of events that occurred)
             self.current_ts = event_ts                                          #Timestamp of the current event
             self.current_event = event_unit                                     #Event number of the current event
@@ -53,35 +57,60 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
             return False
 
 
-    def psth(self):
+    def psth(self, json_template):
         ### Create relative response from population on given trial
         ### Relative response dimensions:
         ### unit:total bins #population: units * total bins
         #OK to call unit_event_response here since we don't need to save it, data is saved to pop_event_response
-        pop_trial_response = []
-        self.index = 0
-        #self.population_response = numpy.zeros(shape=(1, (self.total_units * self.total_bins))) #Create a pop_response template to be filled by bins from neurons
-        self.population_response = []
-        for chan in self.unit_dict: 
-            for unit in self.unit_dict[chan]:
-                unit_ts = numpy.asarray(self.unit_dict[chan][unit], dtype = 'float')
-                trial_ts = self.current_ts
-                offset_ts = unit_ts - trial_ts
-                offset_ts = [Decimal(x).quantize(Decimal('1.0000')) for x in offset_ts]
-                self.binned_response = numpy.histogram(numpy.asarray(offset_ts, dtype='float'), self.total_bins, range = (-abs(self.pre_time), self.post_time))[0]
-                self.population_response.extend(self.binned_response)
-                #self.population_response[(self.total_bins*self.index):(self.total_bins*(self.index+1))] = self.binned_response   #### These values will give the total bins (currently: 5) for each neuron (unit)
-                pop_trial_response = [x for x in self.population_response]
-                self.index = self.index + 1
-                if self.index == self.total_units:
-                    if self.current_event not in self.pop_total_response.keys():
-                        self.pop_total_response[self.current_event] = pop_trial_response
-                    else:
-                        self.pop_total_response[self.current_event].extend(pop_trial_response)
-                    self.pop_current_response = pop_trial_response
+        if json_template == True:
+            pop_trial_response = []
+            self.index = 0
+            #self.population_response = numpy.zeros(shape=(1, (self.total_units * self.total_bins))) #Create a pop_response template to be filled by bins from neurons
+            self.population_response = []
+            for chan in self.unit_dict:
+                for unit in self.unit_dict[chan]:
+                    unit_ts = numpy.asarray(self.unit_dict[chan][unit], dtype = 'float')
+                    trial_ts = self.current_ts
+                    offset_ts = unit_ts - trial_ts
+                    offset_ts = [Decimal(x).quantize(Decimal('1.0000')) for x in offset_ts]
+                    self.binned_response = numpy.histogram(numpy.asarray(offset_ts, dtype='float'), self.total_bins, range = (-abs(self.pre_time), self.post_time))[0]
+                    self.population_response.extend(self.binned_response)
+                    #self.population_response[(self.total_bins*self.index):(self.total_bins*(self.index+1))] = self.binned_response   #### These values will give the total bins (currently: 5) for each neuron (unit)
+                    pop_trial_response = [x for x in self.population_response]
+                    self.index = self.index + 1
+                    if self.index == self.total_units:
+                        if self.current_event not in self.pop_total_response.keys():
+                            self.pop_total_response[self.current_event] = pop_trial_response
+                        else:
+                            self.pop_total_response[self.current_event].extend(pop_trial_response)
+                        self.pop_current_response = pop_trial_response
 
-        self.unit_dict = self.unit_dict_template #Reset unit_dict to save computational time later
-     
+            self.unit_dict = self.unit_dict_template #Reset unit_dict to save computational time later
+        else:
+            pop_trial_response = []
+            self.index = 0
+            #self.population_response = numpy.zeros(shape=(1, (self.total_units * self.total_bins))) #Create a pop_response template to be filled by bins from neurons
+            self.population_response = []
+            for chan in self.json_template_unit_dict:
+                for unit in self.json_template_unit_dict[chan]:
+                    unit_ts = numpy.asarray(self.json_template_unit_dict[chan][unit], dtype = 'float')
+                    trial_ts = self.current_ts
+                    offset_ts = unit_ts - trial_ts
+                    offset_ts = [Decimal(x).quantize(Decimal('1.0000')) for x in offset_ts]
+                    self.binned_response = numpy.histogram(numpy.asarray(offset_ts, dtype='float'), self.total_bins, range = (-abs(self.pre_time), self.post_time))[0]
+                    self.population_response.extend(self.binned_response)
+                    #self.population_response[(self.total_bins*self.index):(self.total_bins*(self.index+1))] = self.binned_response   #### These values will give the total bins (currently: 5) for each neuron (unit)
+                    pop_trial_response = [x for x in self.population_response]
+                    self.index = self.index + 1
+                    if self.index == self.total_units:
+                        if self.current_event not in self.json_template_pop_total_response.keys():
+                            self.json_template_pop_total_response[self.current_event] = pop_trial_response
+                        else:
+                            self.json_template_pop_total_response[self.current_event].extend(pop_trial_response)
+                        self.pop_current_response = pop_trial_response
+
+            self.json_template_unit_dict = self.json_template_unit_dict_template #Reset unit_dict to save computational time later
+
     def psthtemplate(self): #Reshape into PSTH format Trials x (Neurons x Bins) Used at the end of all trials.
         #Counts the events
         self.event_number_count = Counter()
@@ -98,6 +127,13 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
         for i in self.loaded_psth_templates.keys():
             for j in range(self.total_units*self.total_bins):
                 self.euclidean_dists[i][j] = ((self.pop_current_response[j] - self.loaded_template[i][j])**2)**0.5
+                    # print('i', i)
+                    # print('j', j)
+                    # print('length pop_current_response', len(self.pop_current_response))
+                    # print('pop_current_response', self.pop_current_response)
+                    # print('length loaded template i:',len(self.loaded_template[i]))
+                    # print('loaded template', self.loaded_template)
+                    # print('loaded_template', self.loaded_template)
             self.sum_euclidean_dists[i] = sum(self.euclidean_dists[i])
         decoder_key = int(min(self.sum_euclidean_dists.keys(), key= (lambda k: self.sum_euclidean_dists[k])))
         self.decoder_list.append(decoder_key)
@@ -117,10 +153,12 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
     def savetemplate(self):
         json_event_number_dict = {'ActualEvents':self.event_number_list}
         json_decode_number_dict = {'PredictedEvents':self.decoder_list}
+        json_channel_dict = {'ChannelDict':self.channel_dict}
         jsondata = {}
         jsondata.update(self.psth_templates)
         jsondata.update(json_event_number_dict) #Tilt list Actual
         jsondata.update(json_decode_number_dict) #Tilt list Predicted
+        jsondata.update(json_channel_dict)
         #jsondata.update() #Something else?
         name = input('What would you like to name the template file:')
         with open(name +'.txt', 'w') as outfile:
@@ -136,10 +174,11 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
         self.sum_euclidean_dists = {}
         self.loaded_json_event_number_dict = {}
         self.loaded_json_decode_number_dict = {}
+        self.loaded_json_chan_dict = {}
         for i in data.keys():
             if i.isnumeric():
                 temp_psth_template = {i:data[i]}
-                self.loaded_psth_templates.update(temp_psth_templates)
+                self.loaded_psth_templates.update(temp_psth_template)
                 zero = numpy.zeros((self.total_units*self.total_bins,), dtype = int)
                 zero_matrix = [x for x in zero]
                 self.euclidean_dists[i] = zero_matrix
@@ -149,6 +188,19 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                     self.loaded_json_event_number_dict = {i:data[i]}
                 elif i == 'PredictedEvents':
                     self.loaded_json_decode_number_dict = {i:data[i]}
+                elif i == 'ChannelDict':
+                    loaded_json_chan_dict = {i:data[i]}
+                    for j in loaded_json_chan_dict.keys():
+                        self.loaded_json_chan_dict = data[j]
+        
+        for chan, unit_list in self.loaded_json_chan_dict.items():
+            if chan not in self.json_template_unit_dict.keys():
+                self.json_template_unit_dict[chan] = {}
+            for unit in unit_list:
+                self.json_template_unit_dict[chan][unit] = []
+                self.json_template_total_units = self.json_template_total_units + 1
+
+        self.json_template_unit_dict_template = self.json_template_unit_dict
 
         
     def Test(self, baseline):
@@ -165,22 +217,13 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
 if __name__ =='__main__':
     # Create instance of API class
     # New Format to compare Channel and Unit. 0 is unsorted. Channels are Dict Keys, Units are in each list.
-    channel_dict = {1: [1,2,3,4], 2: [1,2,3,4], 3: [1,2,3,4], 4: [1,2,3,4],
-                    5: [1,2,3,4], 6: [1,2,3,4], 7: [1,2,3,4], 8: [1,2,3,4],
-                    9: [1,2,3,4], 10: [1,2,3,4], 11: [1,2,3,4], 12: [1,2,3,4],
-                    13: [1,2,3,4], 14: [1,2,3,4], 15: [1,2,3,4], 16: [1,2,3,4],
-                    17: [1,2,3,4], 18: [1,2,3,4], 19: [1,2,3,4], 20: [1,2,3,4],
-                    21: [1,2,3,4], 22: [1,2,3,4], 23: [1,2,3,4], 24: [1,2,3,4],
-                    25: [1,2,3,4], 26: [1,2,3,4], 27: [1,2,3,4], 28: [1,2,3,4],
-                    29: [1,2,3,4], 30: [1,2,3,4], 31: [1,2,3,4], 32: [1,2,3,4],
-                    33: [1,2,3,4], 34: [1,2,3,4], 35: [1,2,3,4], 36: [1,2,3,4],
-                    37: [1,2,3,4], 38: [1,2,3,4], 39: [1,2,3,4], 40: [1,2,3,4],
-                    41: [1,2,3,4], 42: [1,2,3,4], 43: [1,2,3,4], 44: [1,2,3,4],
-                    45: [1,2,3,4], 46: [1,2,3,4], 47: [1,2,3,4], 48: [1,2,3,4],
-                    49: [1,2,3,4], 50: [1,2,3,4], 51: [1,2,3,4], 52: [1,2,3,4],
-                    53: [1,2,3,4], 54: [1,2,3,4], 55: [1,2,3,4], 56: [1,2,3,4],
-                    57: [1,2,3,4], 58: [1,2,3,4], 59: [1,2,3,4], 60: [1,2,3,4],
-                    61: [1,2,3,4], 62: [1,2,3,4], 63: [1,2,3,4], 64: [1,2,3,4]}
+    channel_dict = {1: [1,2,3], 2: [1,2], 3: [1,2,3], 4: [1,2,3],
+                6: [1,2,3,4], 7: [1,2,3,4], 8: [1,2,3],
+                9: [1,2], 10: [1],
+                13: [1,2,3], 14: [1,2,3,4], 15: [1,2,3], 16: [1,2],
+                18: [1,2,3], 19: [1], 20: [1,2,3,4],
+                25: [1,2,3], 26: [1], 27: [1], 28: [1],
+                29: [1], 31: [1], 32: [1]}
     pre_time = 0.200 #seconds (This value is negative or whatever you put, ex: put 0.200 for -200 ms)
     post_time = 0.200 #seconds
     bin_size = 0.020 #seconds
@@ -188,7 +231,8 @@ if __name__ =='__main__':
     # post_total_bins = 200 #bins
     wait_for_timestamps = False
     calculate_PSTH = False
-    baseline_recording = False
+    baseline_recording = False # True for Creating a baseline recording.
+                               # False to Load a template
     psthclass = PSTH(channel_dict, pre_time, post_time, bin_size)
     
     if baseline_recording == False:
@@ -252,7 +296,9 @@ if __name__ =='__main__':
                             psthclass.event(t.TimeStamp,t.Unit)
 
             if calculate_PSTH == True:
-                psthclass.psth()
+                psthclass.psth(True)
+                psthclass.psth(False)
+
                 if baseline_recording == False:
                     psthclass.decode()
                 wait_for_timestamps = False
