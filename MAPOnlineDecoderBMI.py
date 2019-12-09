@@ -125,17 +125,17 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
     def decode(self):
         tic = time.time()
         for i in self.loaded_psth_templates.keys():
-            for j in range(self.total_units*self.total_bins):
+            for j in range(self.json_template_total_units*self.total_bins):
                 try:
-                    self.euclidean_dists[i][j] = ((self.pop_current_response[j] - self.loaded_template[i][j])**2)**0.5
+                    self.euclidean_dists[i][j] = ((self.json_template_pop_current_response[j] - self.loaded_psth_templates[i][j])**2)**0.5
                 except:
                     print('i', i)
                     print('j', j)
-                    print('length pop_current_response', len(self.pop_current_response))
-                    print('pop_current_response', self.pop_current_response)
-                    print('length loaded template i:',len(self.loaded_template[i]))
-                    print('loaded template', self.loaded_template)
-                    print('loaded_template', self.loaded_template)
+                    print('length pop_current_response', len(self.json_template_pop_current_response))
+                    print('pop_current_response', self.json_template_pop_current_response)
+                    print('length loaded template i:',len(self.loaded_psth_templates[i]))
+                    print('loaded_psth_templates', self.loaded_psth_templates)
+                    print('loaded_psth_templates', self.loaded_psth_templates)
                     
             self.sum_euclidean_dists[i] = sum(self.euclidean_dists[i])
         decoder_key = int(min(self.sum_euclidean_dists.keys(), key= (lambda k: self.sum_euclidean_dists[k])))
