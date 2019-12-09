@@ -9,7 +9,7 @@ import csv
 import TestRunwLoadCells
 from TestRunwLoadCells import *
 from sklearn.metrics import confusion_matrix
-from MAPOnlineDecoder import *
+from MAPOnlineDecoderBMI import *
 ### TO TEST: HOW PAUSE WORKS, CHECK PRINT STATEMENTS ARE CORRECT, WHILE LOOP IS WORKING, EACH TIME.SLEEP IS CHANGED TO A DURATION
 
 ##Parameters:0
@@ -41,7 +41,7 @@ def LoadCellThread():
     Chan_list = ["Dev6/ai18", "Dev6/ai19", "Dev6/ai20", "Dev6/ai21", "Dev6/ai22", "Dev6/ai23","Dev6/ai32", "Dev6/ai33", "Dev6/ai34", "Dev6/ai35", "Dev6/ai36", "Dev6/ai37","Dev6/ai38", "Dev6/ai39", "Dev6/ai48", "Dev6/ai49", "Dev6/ai50", "Dev6/ai51", "Strobe", "Start", "Inclinometer", 'Timestamp']
     with nidaqmx.Task() as task:
         #######################################################
-        sheetName = 'strobed_test_dummy' #csm015_112019_baseline_tilt_nohaptic_loadcell #csm013_12032019_week1sci_openloop_righthemisphere_tilt_nohaptic
+        sheetName = 'dummy' #csm015_112019_baseline_tilt_nohaptic_loadcell #csm013_12032019_week1sci_openloop_righthemisphere_tilt_nohaptic
         #######################################################
         with open(sheetName + '.csv','w+',newline='') as f:
             ###Initialize AI Voltage Channels to record from
@@ -167,25 +167,51 @@ class tiltclass():
         time.sleep(0.010)
         task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,data2,None,None)
         time.sleep(psthclass.post_time)
-        time.sleep(0.125)
+        time.sleep(0.075)
         # Get accumulated timestamps
-        res = client.get_ts()
         foundevent = False
-        # Print information on the data returned
-        for t in res: #50ms
-            # Print information on spike channel 1
-            if t.Type == PL_SingleWFType and t.Channel in psthclass.channel_dict.keys() and t.Unit in psthclass.channel_dict[t.Channel]:
-                psthclass.build_unit(t.Channel,t.Unit,t.TimeStamp)
-            # Print information on events
-            if t.Type == PL_ExtEventType:
-                #print(('Event Ts: {}s Ch: {} Type: {}').format(t.TimeStamp, t.Channel, t.Type))
-                if t.Channel == 257 and foundevent == False: #Channel for Strobed Events.
-                    print('event')
-                    psthclass.event(t.TimeStamp, t.Unit)
-                    psthclass.psth()
-                    foundevent = True
-        if baseline_recording == False:
-            decoderesult = psthclass.decode()
+        while foundevent == False:
+            res = client.get_ts()
+
+            # Print information on the data returned
+            for t in res: #50ms
+                # Print information on spike channel 1
+                if t.Type == PL_SingleWFType and t.Channel in psthclass.channel_dict.keys() and t.Unit in psthclass.channel_dict[t.Channel]:
+                    psthclass.build_unit(t.Channel,t.Unit,t.TimeStamp)
+                # Print information on events
+                if t.Type == PL_ExtEventType:
+                    #print(('Event Ts: {}s Ch: {} Type: {}').format(t.TimeStamp, t.Channel, t.Type))
+                    if t.Channel == 257 and foundevent == False: #Channel for Strobed Events.
+                        print('event')
+                        psthclass.event(t.TimeStamp, t.Unit)
+                        psthclass.psth(True)
+                        psthclass.psth(False)
+                        foundevent = True
+
+                    
+        if baseline_recording == False and foundevent == True:
+            decodeboolean = False
+            while decodeboolean == False:
+
+                print('decode')
+                decoderesult = psthclass.decode()
+                decodeboolean = True
+
+##                    print('no neurons yet')
+##                    res = client.get_ts()
+##                    for t in res: #50ms
+##                        # Print information on spike channel 1
+##                        if t.Type == PL_SingleWFType and t.Channel in psthclass.channel_dict.keys() and t.Unit in psthclass.channel_dict[t.Channel]:
+##                            psthclass.build_unit(t.Channel,t.Unit,t.TimeStamp)
+##                        # Print information on events
+##                        if t.Type == PL_ExtEventType:
+##                            #print(('Event Ts: {}s Ch: {} Type: {}').format(t.TimeStamp, t.Channel, t.Type))
+##                            if t.Channel == 257 and foundevent == False: #Channel for Strobed Events.
+##                                print('event')
+##                                psthclass.event(t.TimeStamp, t.Unit)
+##                                psthclass.psth()
+##                                foundevent = True
+                
             ####
             if decoderesult == True: #Change statement later for if the decoder is correct.
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.reward,None,None)
@@ -195,11 +221,11 @@ class tiltclass():
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
             else: ###This will be if decoder is false, have to deal with punishment tilt.
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.punish,None,None) 
-                time.sleep(0.15)
+                time.sleep(self.WaterDuration)
                 taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
                 time.sleep(2)
         task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
-        
+        print('delay')
         time.sleep(delay) ############################################# delay--- can keep this
 
 
@@ -228,14 +254,20 @@ def choose():
 if __name__ == "__main__":
     # Create instance of API class
     # New Format to compare Channel and Unit. 0 is unsorted. Channels are Dict Keys, Units are in each list.
-    channel_dict = {25: [1,2], 26: [1,2], 27: [1,2], 28: [1,2,3],
-                29: [1,2], 30: [1], 31: [1,2], 32: [1,2]}
+    channel_dict = {1: [1,2,3], 2: [1,2], 3: [1,2,3], 4: [1,2,3],
+                6: [1,2,3,4], 7: [1,2,3,4], 8: [1,2,3],
+                9: [1,2], 10: [1],
+                13: [1,2,3], 14: [1,2,3,4], 15: [1,2,3], 16: [1,2],
+                18: [1,2,3], 19: [1], 20: [1,2,3,4],
+                25: [1,2,3], 26: [1], 27: [1], 28: [1],
+                29: [1], 31: [1], 32: [1],
+                33: [1,2,3,4]}
     pre_time = 0.200 #seconds (This value is negative or whatever you put, ex: put 0.200 for -200 ms)
     post_time = 0.200 #seconds
     bin_size = 0.020 #seconds
     # pre_total_bins = 200 #bins
     # post_total_bins = 200 #bins
-    baseline_recording = True   # Set this to True if this is the Baseline Recording
+    baseline_recording = False   # Set this to True if this is the Baseline Recording
                                 # False if you have a template to load
     psthclass = PSTH(channel_dict, pre_time, post_time, bin_size)
     tilter = tiltclass()
@@ -310,7 +342,7 @@ if __name__ == "__main__":
     input('Start Pulse Acquired, Press Enter to begin Tilts')
     
     nores = client.get_ts()
-    time.sleep(1)
+    time.sleep(3)
     
     ####################################################################################################################################################
                                                                     #Tilt called here.
@@ -341,6 +373,16 @@ if __name__ == "__main__":
     endgame = 3
     try:
         print('Stop Plexon Recording.')
+        task.StopTask()
+        sensors.terminate()
+        psthclass.psthtemplate()
+        client.close_client()
+        psthclass.savetemplate()
+        if baseline_recording == False:
+            print('actual events:y axis, predicted events:x axis')
+            print(confusion_matrix(psthclass.event_number_list,psthclass.decoder_list))
+        else:
+            print('no conf mat')
         while  endgame < 4:
             endgame = loop.waitforend()
         stop_time = time.time()
@@ -349,13 +391,7 @@ if __name__ == "__main__":
         sensors.terminate()
         pass
 
-    task.StopTask()
-    sensors.terminate()
-    psthclass.psthtemplate()
-    client.close_client()
-    psthclass.savetemplate()
+
     print('Done')
-    print('actual events:y axis, predicted events:x axis')
-    print(confusion_matrix(psthclass.event_number_list,psthclass.decoder_list))
 
 
