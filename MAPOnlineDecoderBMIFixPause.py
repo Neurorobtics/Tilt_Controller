@@ -13,7 +13,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
         self.pre_time = pre_time
         self.post_time = post_time
         self.bin_size = bin_size
-        self.total_bins = int((post_time + abs(pre_time)) / bin_size) #bins
+        self.total_bins = int((post_time) / bin_size) #bins
         self.channel_dict = channel_dict
         self.unit_dict = {}
         self.pop_total_response = {}
@@ -73,7 +73,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                     trial_ts = self.current_ts
                     offset_ts = unit_ts - trial_ts
                     offset_ts = [Decimal(x).quantize(Decimal('1.0000')) for x in offset_ts]
-                    self.binned_response = numpy.histogram(numpy.asarray(offset_ts, dtype='float'), self.total_bins, range = (-abs(self.pre_time), self.post_time))[0]
+                    self.binned_response = numpy.histogram(numpy.asarray(offset_ts, dtype='float'), self.total_bins, range = (0, self.post_time))[0]
                     self.population_response.extend(self.binned_response)
                     #self.population_response[(self.total_bins*self.index):(self.total_bins*(self.index+1))] = self.binned_response   #### These values will give the total bins (currently: 5) for each neuron (unit)
                     pop_trial_response = [x for x in self.population_response]
@@ -97,7 +97,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                     trial_ts = self.current_ts
                     offset_ts = unit_ts - trial_ts
                     offset_ts = [Decimal(x).quantize(Decimal('1.0000')) for x in offset_ts]
-                    self.binned_response = numpy.histogram(numpy.asarray(offset_ts, dtype='float'), self.total_bins, range = (-abs(self.pre_time), self.post_time))[0]
+                    self.binned_response = numpy.histogram(numpy.asarray(offset_ts, dtype='float'), self.total_bins, range = (0, self.post_time))[0]
                     self.population_response.extend(self.binned_response)
                     #self.population_response[(self.total_bins*self.index):(self.total_bins*(self.index+1))] = self.binned_response   #### These values will give the total bins (currently: 5) for each neuron (unit)
                     pop_trial_response = [x for x in self.population_response]
@@ -184,10 +184,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
             if i.isnumeric():
                 temp_psth_template = {i:data[i]}
                 self.loaded_psth_templates.update(temp_psth_template)
-                zero = numpy.zeros((self.total_units*self.total_bins,), dtype = int)
-                zero_matrix = [x for x in zero]
-                self.euclidean_dists[i] = zero_matrix
-                self.sum_euclidean_dists[i] = []
+
             else:
                 if i == 'ActualEvents':
                     self.loaded_json_event_number_dict = {i:data[i]}
@@ -205,6 +202,12 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                 self.json_template_unit_dict[chan][unit] = []
                 self.json_template_total_units = self.json_template_total_units + 1
 
+        for i in data.keys():
+            if i.isnumeric():
+                zero = numpy.zeros((self.json_template_total_units*self.total_bins,), dtype = int)
+                zero_matrix = [x for x in zero]
+                self.euclidean_dists[i] = zero_matrix
+                self.sum_euclidean_dists[i] = []
         self.json_template_unit_dict_template = self.json_template_unit_dict
 
         
