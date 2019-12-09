@@ -139,7 +139,7 @@ class tiltclass():
     def tilt(self,i,task,taskinterrupt,tilts,psthclass,client,baseline_recording):  
         try:
             tiltbool = False
-            
+            foundevent = False
             delay = ((randint(1,50))/100)+ 2
             #Needs x = choose() as shown below
             if int(tilts[i]) == 1:
@@ -174,7 +174,7 @@ class tiltclass():
             time.sleep(0.075)
             
             # Get accumulated timestamps
-            foundevent = False
+            
             while foundevent == False:
                 res = client.get_ts()
 
