@@ -86,7 +86,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                         self.pop_current_response = pop_trial_response
 
             self.unit_dict = self.unit_dict_template #Reset unit_dict to save computational time later
-        else:
+        else: #Decoding psth
             pop_trial_response = []
             self.index = 0
             #self.population_response = numpy.zeros(shape=(1, (self.total_units * self.total_bins))) #Create a pop_response template to be filled by bins from neurons

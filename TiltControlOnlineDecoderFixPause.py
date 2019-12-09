@@ -41,7 +41,7 @@ def LoadCellThread():
     Chan_list = ["Dev6/ai18", "Dev6/ai19", "Dev6/ai20", "Dev6/ai21", "Dev6/ai22", "Dev6/ai23","Dev6/ai32", "Dev6/ai33", "Dev6/ai34", "Dev6/ai35", "Dev6/ai36", "Dev6/ai37","Dev6/ai38", "Dev6/ai39", "Dev6/ai48", "Dev6/ai49", "Dev6/ai50", "Dev6/ai51", "Strobe", "Start", "Inclinometer", 'Timestamp']
     with nidaqmx.Task() as task:
         #######################################################
-        sheetName = 'CSM014_12092019_Week1SCI_tilt_BMI_Day1' #csm015_112019_baseline_tilt_nohaptic_loadcell #csm013_12032019_week1sci_openloop_righthemisphere_tilt_nohaptic
+        sheetName = 'CSM014_12092019_Week2SCI_tilt_openloop2' #CSM014_12092019_Week2SCI_tilt_openloop2
         #######################################################
         with open(sheetName + '.csv','w+',newline='') as f:
             ###Initialize AI Voltage Channels to record from
@@ -190,7 +190,8 @@ class tiltclass():
                             print('event')
                             psthclass.event(t.TimeStamp, t.Unit)
                             psthclass.psth(True)
-                            psthclass.psth(False)
+                            if baseline_recording == False:
+                                psthclass.psth(False)
                             foundevent = True
 
                         
@@ -241,7 +242,8 @@ class tiltclass():
                             print('event')
                             psthclass.event(t.TimeStamp, t.Unit)
                             psthclass.psth(True)
-                            psthclass.psth(False)
+                            if baseline_recording == False:
+                                psthclass.psth(False)
                             foundevent = True
 
             if baseline_recording == False and foundevent == True:
@@ -291,11 +293,11 @@ def choose():
 if __name__ == "__main__":
     # Create instance of API class
     # New Format to compare Channel and Unit. 0 is unsorted. Channels are Dict Keys, Units are in each list.
-    channel_dict = {1: [1,2,3], 2: [1,2], 3: [1,2,3], 4: [1,2,3],
-                6: [1,2,3,4], 7: [1,2,3,4], 8: [1,2,3],
-                9: [1,2], 10: [1],
-                13: [1,2,3], 14: [1,2,3,4], 15: [1,2,3], 16: [1,2],
-                18: [1,2,3], 19: [1], 20: [1,2,3,4],
+    channel_dict = {1: [1,2,3], 2: [1,2,3,4], 3: [1,2,3], 4: [1,2,3],
+                6: [1,2], 7: [1,2,3,4], 8: [1,2,3,4],
+                9: [1,2,3], 10: [1],
+                13: [1,2,3], 14: [1,2,3,4], 15: [1,2,3], 16: [1,2,3],
+                18: [1], 19: [1], 20: [1,2,3,4],
                 25: [1,2,3], 26: [1], 27: [1], 28: [1],
                 29: [1], 31: [1], 32: [1]}
     pre_time = 0.200 #seconds (This value is negative or whatever you put, ex: put 0.200 for -200 ms)
@@ -303,7 +305,7 @@ if __name__ == "__main__":
     bin_size = 0.020 #seconds
     # pre_total_bins = 200 #bins
     # post_total_bins = 200 #bins
-    baseline_recording = False   # Set this to True if this is the Baseline Recording
+    baseline_recording = True   # Set this to True if this is the Baseline Recording
                                 # False if you have a template to load
     psthclass = PSTH(channel_dict, pre_time, post_time, bin_size)
     tilter = tiltclass()
