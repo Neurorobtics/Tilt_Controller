@@ -107,7 +107,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                             self.json_template_pop_total_response[self.current_event] = pop_trial_response
                         else:
                             self.json_template_pop_total_response[self.current_event].extend(pop_trial_response)
-                        self.pop_current_response = pop_trial_response
+                        self.json_template_pop_current_response = pop_trial_response
 
             self.json_template_unit_dict = self.json_template_unit_dict_template #Reset unit_dict to save computational time later
 
@@ -129,13 +129,9 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                 try:
                     self.euclidean_dists[i][j] = ((self.json_template_pop_current_response[j] - self.loaded_psth_templates[i][j])**2)**0.5
                 except:
-                    print('i', i)
                     print('j', j)
                     print('length pop_current_response', len(self.json_template_pop_current_response))
-                    print('pop_current_response', self.json_template_pop_current_response)
                     print('length loaded template i:',len(self.loaded_psth_templates[i]))
-                    print('loaded_psth_templates', self.loaded_psth_templates)
-                    print('loaded_psth_templates', self.loaded_psth_templates)
                     
             self.sum_euclidean_dists[i] = sum(self.euclidean_dists[i])
         decoder_key = int(min(self.sum_euclidean_dists.keys(), key= (lambda k: self.sum_euclidean_dists[k])))
