@@ -41,7 +41,7 @@ def LoadCellThread():
     Chan_list = ["Dev6/ai18", "Dev6/ai19", "Dev6/ai20", "Dev6/ai21", "Dev6/ai22", "Dev6/ai23","Dev6/ai32", "Dev6/ai33", "Dev6/ai34", "Dev6/ai35", "Dev6/ai36", "Dev6/ai37","Dev6/ai38", "Dev6/ai39", "Dev6/ai48", "Dev6/ai49", "Dev6/ai50", "Dev6/ai51", "Strobe", "Start", "Inclinometer", 'Timestamp']
     with nidaqmx.Task() as task:
         #######################################################
-        sheetName = 'CSM014_12092019_Week2SCI_tilt_openloop2' #CSM014_12092019_Week2SCI_tilt_openloop2
+        sheetName = 'dummy' #CSM014_12092019_Week2SCI_tilt_openloop3
         #######################################################
         with open(sheetName + '.csv','w+',newline='') as f:
             ###Initialize AI Voltage Channels to record from
@@ -140,6 +140,8 @@ class tiltclass():
         try:
             tiltbool = False
             foundevent = False
+            collected_ts = False
+            calc_psth = False
             delay = ((randint(1,50))/100)+ 2
             #Needs x = choose() as shown below
             if int(tilts[i]) == 1:
@@ -175,7 +177,7 @@ class tiltclass():
             
             # Get accumulated timestamps
             
-            while foundevent == False:
+            while foundevent == False or collected_ts == False:
                 res = client.get_ts()
 
                 # Print information on the data returned
@@ -183,19 +185,22 @@ class tiltclass():
                     # Print information on spike channel 1
                     if t.Type == PL_SingleWFType and t.Channel in psthclass.channel_dict.keys() and t.Unit in psthclass.channel_dict[t.Channel]:
                         psthclass.build_unit(t.Channel,t.Unit,t.TimeStamp)
+                        if foundevent == True and t.TimeStamp >= (psthclass.current_ts + psthclass.post_time):
+                            collected_ts = True
                     # Print information on events
                     if t.Type == PL_ExtEventType:
                         #print(('Event Ts: {}s Ch: {} Type: {}').format(t.TimeStamp, t.Channel, t.Type))
                         if t.Channel == 257 and foundevent == False: #Channel for Strobed Events.
                             print('event')
                             psthclass.event(t.TimeStamp, t.Unit)
-                            psthclass.psth(True)
-                            if baseline_recording == False:
-                                psthclass.psth(False)
                             foundevent = True
+            if calc_psth == False:
+                psthclass.psth(True)
+                if baseline_recording == False:
+                    psthclass.psth(False)
+                calc_psth = True
 
-                        
-            if baseline_recording == False and foundevent == True:
+            if baseline_recording == False and foundevent == True and collected_ts == True:
                 decodeboolean = False
                 while decodeboolean == False:
                     decoderesult = psthclass.decode()
@@ -227,7 +232,7 @@ class tiltclass():
                 task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,data2,None,None)
                 time.sleep(psthclass.post_time)
                 tiltbool = True
-            while foundevent == False:
+            while foundevent == False or collected_ts == False:
                 res = client.get_ts()
 
                 # Print information on the data returned
@@ -235,18 +240,22 @@ class tiltclass():
                     # Print information on spike channel 1
                     if t.Type == PL_SingleWFType and t.Channel in psthclass.channel_dict.keys() and t.Unit in psthclass.channel_dict[t.Channel]:
                         psthclass.build_unit(t.Channel,t.Unit,t.TimeStamp)
+                        if foundevent == True and t.TimeStamp >= (psthclass.current_ts + psthclass.post_time):
+                            collected_ts = True
                     # Print information on events
                     if t.Type == PL_ExtEventType:
                         #print(('Event Ts: {}s Ch: {} Type: {}').format(t.TimeStamp, t.Channel, t.Type))
                         if t.Channel == 257 and foundevent == False: #Channel for Strobed Events.
                             print('event')
                             psthclass.event(t.TimeStamp, t.Unit)
-                            psthclass.psth(True)
-                            if baseline_recording == False:
-                                psthclass.psth(False)
                             foundevent = True
+            if calc_psth == False:
+                psthclass.psth(True)
+                if baseline_recording == False:
+                    psthclass.psth(False)
+                calc_psth = True
 
-            if baseline_recording == False and foundevent == True:
+            if baseline_recording == False and foundevent == True and collected_ts == True:
                 while decodeboolean == False:
                     decoderesult = psthclass.decode()
                     print('decode')
@@ -305,7 +314,7 @@ if __name__ == "__main__":
     bin_size = 0.020 #seconds
     # pre_total_bins = 200 #bins
     # post_total_bins = 200 #bins
-    baseline_recording = True   # Set this to True if this is the Baseline Recording
+    baseline_recording = False   # Set this to True if this is the Baseline Recording
                                 # False if you have a template to load
     psthclass = PSTH(channel_dict, pre_time, post_time, bin_size)
     tilter = tiltclass()
@@ -391,10 +400,10 @@ if __name__ == "__main__":
                 task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,begin,None,None)
                 print('\nPausing... (Hit ENTER to contrinue, type quit to exit.)')
                 response = input()
-                nores = client.get_ts()
+                #nores = client.get_ts()
                 if response == 'quit':
                     break
-            nores = client.get_ts()
+            #nores = client.get_ts()
             time.sleep(0.5)
             if endgame < 3:
                 endgame = loop.run()
@@ -403,7 +412,7 @@ if __name__ == "__main__":
             print('\nPausing... (Hit ENTER to contrinue, type quit to exit.)')
             try:
                 response = input()
-                nores = client.get_ts()
+                #nores = client.get_ts()
                 if response == 'quit':
                     # endgame = 3
                     break
