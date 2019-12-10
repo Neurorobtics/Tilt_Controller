@@ -175,7 +175,7 @@ class tiltclass():
                 time.sleep(psthclass.post_time)
                 tiltbool = True
             time.sleep(0.075)
-            
+            task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
             # Get accumulated timestamps
             
             while foundevent == False or collected_ts == False:
@@ -195,7 +195,7 @@ class tiltclass():
                             print('event')
                             psthclass.event(t.TimeStamp, t.Unit)
                             foundevent = True
-                            
+
             if calc_psth == False and collected_ts == True:
                 psthclass.psth(True)
                 if baseline_recording == False:
