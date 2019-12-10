@@ -1,3 +1,4 @@
+# TiltContol Online Decoder Fix Pause
 import definitions
 from definitions import *
 import threading
@@ -194,7 +195,8 @@ class tiltclass():
                             print('event')
                             psthclass.event(t.TimeStamp, t.Unit)
                             foundevent = True
-            if calc_psth == False:
+                            
+            if calc_psth == False and collected_ts == True:
                 psthclass.psth(True)
                 if baseline_recording == False:
                     psthclass.psth(False)
@@ -249,7 +251,8 @@ class tiltclass():
                             print('event')
                             psthclass.event(t.TimeStamp, t.Unit)
                             foundevent = True
-            if calc_psth == False:
+
+            if calc_psth == False and collected_ts == True:
                 psthclass.psth(True)
                 if baseline_recording == False:
                     psthclass.psth(False)

@@ -239,7 +239,10 @@ if __name__ =='__main__':
     # post_total_bins = 200 #bins
     wait_for_timestamps = False
     calculate_PSTH = False
-    baseline_recording = False # True for Creating a baseline recording.
+    calc_psth = False
+    foundevent = False
+    collected_ts = False
+    baseline_recording = True # True for Creating a baseline recording.
                                # False to Load a template
     psthclass = PSTH(channel_dict, pre_time, post_time, bin_size)
     
@@ -278,13 +281,13 @@ if __name__ =='__main__':
     try:
         while running:
             # Wait half a second for data to accumulate
-            if wait_for_timestamps:
-                time.sleep(post_time)
-                calculate_PSTH = True
+            # if wait_for_timestamps:
+            #     time.sleep(post_time)
+            #     calculate_PSTH = True
 
-            else:
-                time.sleep(.1)
-##            tic = time.time()
+            # else:
+            #     time.sleep(.1)
+            time.sleep(0.1)
             # Get accumulated timestamps
             res = client.get_ts()
 
@@ -294,23 +297,30 @@ if __name__ =='__main__':
                 # Print information on spike channel 1
                 if t.Type == PL_SingleWFType and t.Channel in psthclass.channel_dict.keys() and t.Unit in psthclass.channel_dict[t.Channel]:
                     psthclass.build_unit(t.Channel,t.Unit,t.TimeStamp)
+                    if foundevent == True and t.TimeStamp >= (psthclass.current_ts + psthclass.post_time):
+                        collected_ts = True
+
+
                 # Print information on events
-                if t.Type == PL_ExtEventType:
+                if t.Type == PL_ExtEventType and foundevent == False:
                     print(('Event Ts: {}s Ch: {} Type: {}').format(t.TimeStamp, t.Channel, t.Type))
                     if t.Channel == 257: #Channel for Strobed Events.
-                        if wait_for_timestamps == False:
-                            wait_for_timestamps = psthclass.event(t.TimeStamp, t.Unit)
-                        else:
-                            psthclass.event(t.TimeStamp,t.Unit)
+                        psthclass.event(t.TimeStamp,t.Unit)
+                        foundevent = True
 
-            if calculate_PSTH == True:
+            if calc_psth == False and collected_ts == True:
                 psthclass.psth(True)
-                psthclass.psth(False)
+                calc_psth = True
+                if baseline_recording == False:
+                    psthclass.psth(False)
 
                 if baseline_recording == False:
                     psthclass.decode()
                 wait_for_timestamps = False
                 calculate_PSTH = False
+                foundevent = False
+                calc_psth = False
+                collected_ts = False
 ##            toc = time.time() - tic
 ##            print('toc: ',toc)
 ##            timer_list.append(toc)
