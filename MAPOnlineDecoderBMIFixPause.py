@@ -87,10 +87,10 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
 
             self.unit_dict = self.unit_dict_template #Reset unit_dict to save computational time later
         else: #Decoding psth
-            pop_trial_response = []
-            self.index = 0
-            #self.population_response = numpy.zeros(shape=(1, (self.total_units * self.total_bins))) #Create a pop_response template to be filled by bins from neurons
-            self.population_response = []
+            json_pop_trial_response = []
+            self.json_index = 0
+            #self.json_population_response = numpy.zeros(shape=(1, (self.total_units * self.total_bins))) #Create a pop_response template to be filled by bins from neurons
+            self.json_population_response = []
             for chan in self.json_template_unit_dict:
                 for unit in self.json_template_unit_dict[chan]:
                     unit_ts = numpy.asarray(self.json_template_unit_dict[chan][unit], dtype = 'float')
@@ -98,16 +98,16 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                     offset_ts = unit_ts - trial_ts
                     offset_ts = [Decimal(x).quantize(Decimal('1.0000')) for x in offset_ts]
                     self.binned_response = numpy.histogram(numpy.asarray(offset_ts, dtype='float'), self.total_bins, range = (0, self.post_time))[0]
-                    self.population_response.extend(self.binned_response)
-                    #self.population_response[(self.total_bins*self.index):(self.total_bins*(self.index+1))] = self.binned_response   #### These values will give the total bins (currently: 5) for each neuron (unit)
-                    pop_trial_response = [x for x in self.population_response]
-                    self.index = self.index + 1
-                    if self.index == self.json_template_total_units:
+                    self.json_population_response.extend(self.binned_response)
+                    #self.json_population_response[(self.total_bins*self.json_index):(self.total_bins*(self.json_index+1))] = self.binned_response   #### These values will give the total bins (currently: 5) for each neuron (unit)
+                    json_pop_trial_response = [x for x in self.json_population_response]
+                    self.json_index = self.json_index + 1
+                    if self.json_index == self.json_template_total_units:
                         if self.current_event not in self.json_template_pop_total_response.keys():
-                            self.json_template_pop_total_response[self.current_event] = pop_trial_response
+                            self.json_template_pop_total_response[self.current_event] = json_pop_trial_response
                         else:
-                            self.json_template_pop_total_response[self.current_event].extend(pop_trial_response)
-                        self.json_template_pop_current_response = pop_trial_response
+                            self.json_template_pop_total_response[self.current_event].extend(json_pop_trial_response)
+                        self.json_template_pop_current_response = json_pop_trial_response
 
             self.json_template_unit_dict = self.json_template_unit_dict_template #Reset unit_dict to save computational time later
 
@@ -130,11 +130,11 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                 self.euclidean_dists[i][j] = ((self.json_template_pop_current_response[j] - self.loaded_psth_templates[i][j])**2)**0.5
                 # except:
                 #     print('bin', self.binned_response)
-                #     print('pop bin', self.population_response)
+                #     print('pop bin', self.json_population_response)
                 #     # print('j', j)
                 #     # print('length pop_current_response', len(self.json_template_pop_current_response))
                 #     # print('json_temp pop current resp', self.json_template_pop_current_response)
-                #     # print('pop resp', self.population_response)
+                #     # print('pop resp', self.json_population_response)
                 #     # print('length loaded template i:',len(self.loaded_psth_templates[i]))
                 #     # print('psth temps', self.loaded_psth_templates[i])
                 #     break
