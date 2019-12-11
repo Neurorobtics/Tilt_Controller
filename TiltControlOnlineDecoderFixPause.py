@@ -167,15 +167,15 @@ class tiltclass():
             ################################################################################################################################################################################################################        
                                                     #Time dependent section. Will include the client and decode here.
             if tiltbool == False:
-                res = client.get_ts()
+                # res = client.get_ts()
                 time.sleep(psthclass.pre_time)
                 task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,data,None,None)
-                time.sleep(0.010)
-                task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,data2,None,None)
+                # time.sleep(0.010)
+                # task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,data2,None,None)
                 time.sleep(psthclass.post_time)
                 tiltbool = True
             time.sleep(0.075)
-            task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
+            # task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
             # Get accumulated timestamps
             
             while foundevent == False or collected_ts == False:
@@ -190,11 +190,12 @@ class tiltclass():
                             collected_ts = True
                     # Print information on events
                     if t.Type == PL_ExtEventType:
-                        #print(('Event Ts: {}s Ch: {} Type: {}').format(t.TimeStamp, t.Channel, t.Type))
+                        print(('Event Ts: {}s Ch: {} Type: {}').format(t.TimeStamp, t.Channel, t.Type))
                         if t.Channel == 257 and foundevent == False: #Channel for Strobed Events.
                             print('event')
                             psthclass.event(t.TimeStamp, t.Unit)
                             foundevent = True
+                            task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
 
             if calc_psth == False and collected_ts == True:
                 psthclass.psth(True)
@@ -227,11 +228,11 @@ class tiltclass():
             return False
         except KeyboardInterrupt:
             if tiltbool == False:
-                res = client.get_ts()
+                # res = client.get_ts()
                 time.sleep(psthclass.pre_time)
                 task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,data,None,None)
-                time.sleep(0.010)
-                task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,data2,None,None)
+                # time.sleep(0.010)
+                # task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,data2,None,None)
                 time.sleep(psthclass.post_time)
                 tiltbool = True
             while foundevent == False or collected_ts == False:
@@ -251,6 +252,7 @@ class tiltclass():
                             print('event')
                             psthclass.event(t.TimeStamp, t.Unit)
                             foundevent = True
+                            task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
 
             if calc_psth == False and collected_ts == True:
                 psthclass.psth(True)
@@ -305,19 +307,28 @@ def choose():
 if __name__ == "__main__":
     # Create instance of API class
     # New Format to compare Channel and Unit. 0 is unsorted. Channels are Dict Keys, Units are in each list.
-    channel_dict = {1: [1,2,3], 2: [1,2,3,4], 3: [1,2,3], 4: [1,2,3],
-                6: [1,2], 7: [1,2,3,4], 8: [1,2,3,4],
-                9: [1,2,3], 10: [1],
-                13: [1,2,3], 14: [1,2,3,4], 15: [1,2,3], 16: [1,2,3],
-                18: [1], 19: [1], 20: [1,2,3,4],
-                25: [1,2,3], 26: [1], 27: [1], 28: [1],
-                29: [1], 31: [1], 32: [1]}
+    channel_dict = {1: [1,2,3,4], 2: [1,2,3,4], 3: [1,2,3,4], 4: [1,2,3,4],
+                    5: [1,2,3,4], 6: [1,2,3,4], 7: [1,2,3,4], 8: [1,2,3,4],
+                    9: [1,2,3,4], 10: [1,2,3,4], 11: [1,2,3,4], 12: [1,2,3,4],
+                    13: [1,2,3,4], 14: [1,2,3,4], 15: [1,2,3,4], 16: [1,2,3,4],
+                    17: [1,2,3,4], 18: [1,2,3,4], 19: [1,2,3,4], 20: [1,2,3,4],
+                    21: [1,2,3,4], 22: [1,2,3,4], 23: [1,2,3,4], 24: [1,2,3,4],
+                    25: [1,2,3,4], 26: [1,2,3,4], 27: [1,2,3,4], 28: [1,2,3,4],
+                    29: [1,2,3,4], 30: [1,2,3,4], 31: [1,2,3,4], 32: [1,2,3,4],
+                    33: [1,2,3,4], 34: [1,2,3,4], 35: [1,2,3,4], 36: [1,2,3,4],
+                    37: [1,2,3,4], 38: [1,2,3,4], 39: [1,2,3,4], 40: [1,2,3,4],
+                    41: [1,2,3,4], 42: [1,2,3,4], 43: [1,2,3,4], 44: [1,2,3,4],
+                    45: [1,2,3,4], 46: [1,2,3,4], 47: [1,2,3,4], 48: [1,2,3,4],
+                    49: [1,2,3,4], 50: [1,2,3,4], 51: [1,2,3,4], 52: [1,2,3,4],
+                    53: [1,2,3,4], 54: [1,2,3,4], 55: [1,2,3,4], 56: [1,2,3,4],
+                    57: [1,2,3,4], 58: [1,2,3,4], 59: [1,2,3,4], 60: [1,2,3,4],
+                    61: [1,2,3,4], 62: [1,2,3,4], 63: [1,2,3,4], 64: [1,2,3,4]}
     pre_time = 0.200 #seconds (This value is negative or whatever you put, ex: put 0.200 for -200 ms)
     post_time = 0.200 #seconds
     bin_size = 0.020 #seconds
     # pre_total_bins = 200 #bins
     # post_total_bins = 200 #bins
-    baseline_recording = False   # Set this to True if this is the Baseline Recording
+    baseline_recording = True   # Set this to True if this is the Baseline Recording
                                 # False if you have a template to load
     psthclass = PSTH(channel_dict, pre_time, post_time, bin_size)
     tilter = tiltclass()
