@@ -15,7 +15,10 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
         self.bin_size = bin_size
         self.total_bins = int((post_time) / bin_size) #bins
         self.channel_dict = channel_dict
+        self.json_template_channel_dict = {}
+        self.total_channel_dict = channel_dict
         self.unit_dict = {}
+        self.total_unit_dict = {}
         self.pop_total_response = {}
         self.json_template_pop_total_response = {}
         self.psth_templates = {}
@@ -26,12 +29,14 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
         self.decoder_list = []
         self.decoder_times = []
         self.total_units = 0
+        self.json_template_unit_dict_nonints = {}
         self.json_template_unit_dict = {}
         self.json_template_total_units = 0
         self.event_count = 0
         self.current_ts = 0
         
         self.responses = 0 ### testing number of responses
+        # print('channel_dict', self.channel_dict)
         for chan, unit_list in self.channel_dict.items():
             if chan not in self.unit_dict.keys():
                 self.unit_dict[chan] = {}
@@ -40,9 +45,13 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                 self.total_units = self.total_units + 1
 
         self.unit_dict_template = self.unit_dict
+        # print('unit_dict', self.unit_dict) 
     ###### build_unit will be used to gather timestamps from plexon and add them to the unit_dict which will be used to compare psth formats, etc.
     def build_unit(self, tmp_channel, tmp_unit, tmp_timestamp):
-        self.unit_dict[tmp_channel][tmp_unit].append(Decimal(tmp_timestamp).quantize(Decimal('1.0000')))
+        if tmp_channel in psthclass.channel_dict.keys() and tmp_unit in psthclass.channel_dict[t.Channel]:
+            self.unit_dict[tmp_channel][tmp_unit].append(Decimal(tmp_timestamp).quantize(Decimal('1.0000')))
+        if tmp_channel in psthclass.json_template_channel_dict.keys() and tmp_unit in psthclass.json_template_channel_dict[t.Channel]:
+            self.json_template_unit_dict[tmp_channel][tmp_unit].append(Decimal(tmp_timestamp).quantize(Decimal('1.0000')))
 
     def event(self, event_ts, event_unit):
         #Need to check that it's not a duplicate event...
@@ -84,8 +93,8 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                         else:
                             self.pop_total_response[self.current_event].extend(pop_trial_response)
                         self.pop_current_response = pop_trial_response
-            if baseline_recording == True:
-                self.unit_dict = self.unit_dict_template #Reset unit_dict to save computational time later
+
+            self.unit_dict = self.unit_dict_template #Reset unit_dict to save computational time later
         else: #Decoding psth
             json_pop_trial_response = []
             self.json_index = 0
@@ -93,7 +102,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
             self.json_population_response = []
             for chan in self.json_template_unit_dict:
                 for unit in self.json_template_unit_dict[chan]:
-                    unit_ts = numpy.asarray(self.unit_dict[chan][unit], dtype = 'float')
+                    unit_ts = numpy.asarray(self.json_template_unit_dict[chan][unit], dtype = 'float')
                     trial_ts = self.current_ts
                     offset_ts = unit_ts - trial_ts
                     offset_ts = [Decimal(x).quantize(Decimal('1.0000')) for x in offset_ts]
@@ -109,7 +118,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                             self.json_template_pop_total_response[self.current_event].extend(json_pop_trial_response)
                         self.json_template_pop_current_response = json_pop_trial_response
 
-            self.unit_dict = self.unit_dict_template #Reset unit_dict to save computational time later
+            self.json_template_unit_dict = self.json_template_unit_dict_template #Reset unit_dict to save computational time later
 
     def psthtemplate(self): #Reshape into PSTH format Trials x (Neurons x Bins) Used at the end of all trials.
         #Counts the events
@@ -194,14 +203,41 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                     loaded_json_chan_dict = {i:data[i]}
                     for j in loaded_json_chan_dict.keys():
                         self.loaded_json_chan_dict = data[j]
+                        #print('loaded_json_chan_dict',self.loaded_json_chan_dict)
         
         for chan, unit_list in self.loaded_json_chan_dict.items():
-            if chan not in self.json_template_unit_dict.keys():
-                self.json_template_unit_dict[chan] = {}
-            for unit in unit_list:
-                self.json_template_unit_dict[chan][unit] = []
-                self.json_template_total_units = self.json_template_total_units + 1
+            new_chan = int(chan)
+            new_chan_unit_list = {new_chan:unit_list}
+            self.json_template_channel_dict.update(new_chan_unit_list)
 
+        # print('json_template_channel_dict', self.json_template_channel_dict)
+
+        for chan, unit_list in self.loaded_json_chan_dict.items():
+            if chan not in self.json_template_unit_dict_nonints.keys():
+                self.json_template_unit_dict_nonints[chan] = {}
+            for unit in unit_list:
+                self.json_template_unit_dict_nonints[chan][unit] = []
+                self.json_template_total_units = self.json_template_total_units + 1
+        for i,j in self.json_template_unit_dict_nonints.items():
+            new_i = int(i)
+            new_ij = {new_i:j}
+            self.json_template_unit_dict.update(new_ij)
+
+        # print('json_template_unit_dict', self.json_template_unit_dict)
+        for chan, unit_list in self.unit_dict.items():
+            if chan not in self.total_unit_dict.keys():
+                self.total_unit_dict[chan] = {}
+            for unit in unit_list:
+                self.total_unit_dict[chan][unit] = []
+
+        for chan, unit_list in self.json_template_unit_dict.items():
+            if chan not in self.total_unit_dict.keys():
+                self.total_unit_dict[chan] = {}
+            for unit in unit_list:
+                if unit not in self.total_unit_dict[chan].keys():
+                    self.total_unit_dict[chan][unit] = []
+        # print('total unit dict', self.total_unit_dict)
+        # Prepare Euclidean dist matrix
         for i in data.keys():
             if i.isnumeric():
                 zero = numpy.zeros((self.json_template_total_units*self.total_bins,), dtype = int)
@@ -209,8 +245,16 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                 self.euclidean_dists[i] = zero_matrix
                 self.sum_euclidean_dists[i] = []
         self.json_template_unit_dict_template = self.json_template_unit_dict
+        # print('json_template_unit_dict_template', self.json_template_unit_dict_template)
 
-        
+        for chan, unit_list in self.json_template_channel_dict.items():
+            if chan not in self.total_channel_dict.keys():
+                self.total_channel_dict.update({chan:self.json_template_channel_dict[chan]})
+            for unit in unit_list:
+                if unit not in self.total_channel_dict[chan]:
+                    self.total_channel_dict[chan].append(unit)
+
+        # print('total_channel_dict', self.total_channel_dict)
     def Test(self, baseline):
         print('test')
         print('event list:', self.event_number_list)
@@ -242,7 +286,7 @@ if __name__ =='__main__':
     calc_psth = False
     foundevent = False
     collected_ts = False
-    baseline_recording = True # True for Creating a baseline recording.
+    baseline_recording = False # True for Creating a baseline recording.
                                # False to Load a template
     psthclass = PSTH(channel_dict, pre_time, post_time, bin_size)
     
@@ -295,7 +339,7 @@ if __name__ =='__main__':
             
             for t in res:
                 # Print information on spike channel 1
-                if t.Type == PL_SingleWFType and t.Channel in psthclass.channel_dict.keys() and t.Unit in psthclass.channel_dict[t.Channel]:
+                if t.Type == PL_SingleWFType and t.Channel in psthclass.total_channel_dict.keys() and t.Unit in psthclass.total_channel_dict[t.Channel]:
                     psthclass.build_unit(t.Channel,t.Unit,t.TimeStamp)
                     if foundevent == True and t.TimeStamp >= (psthclass.current_ts + psthclass.post_time):
                         collected_ts = True

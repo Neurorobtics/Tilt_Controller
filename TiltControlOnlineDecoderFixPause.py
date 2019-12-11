@@ -185,10 +185,12 @@ class tiltclass():
                 # Print information on the data returned
                 for t in res: #50ms
                     # Print information on spike channel 1
-                    if t.Type == PL_SingleWFType and t.Channel in psthclass.channel_dict.keys() and t.Unit in psthclass.channel_dict[t.Channel]:
+                    if t.Type == PL_SingleWFType and t.Channel in psthclass.total_channel_dict.keys() and t.Unit in psthclass.total_channel_dict[t.Channel]:
                         psthclass.build_unit(t.Channel,t.Unit,t.TimeStamp)
                         if foundevent == True and t.TimeStamp >= (psthclass.current_ts + psthclass.post_time):
-                            collected_ts = True
+                            if collected_ts == False:
+                                collected_ts = True
+                                print('collected ts')
                     # Print information on events
                     if t.Type == PL_ExtEventType:
                         if t.Channel == 257 and foundevent == False: #Channel for Strobed Events.
@@ -240,7 +242,7 @@ class tiltclass():
                 # Print information on the data returned
                 for t in res: #50ms
                     # Print information on spike channel 1
-                    if t.Type == PL_SingleWFType and t.Channel in psthclass.channel_dict.keys() and t.Unit in psthclass.channel_dict[t.Channel]:
+                    if t.Type == PL_SingleWFType and t.Channel in psthclass.total_channel_dict.keys() and t.Unit in psthclass.total_channel_dict[t.Channel]:
                         psthclass.build_unit(t.Channel,t.Unit,t.TimeStamp)
                         if foundevent == True and t.TimeStamp >= (psthclass.current_ts + psthclass.post_time):
                             collected_ts = True
