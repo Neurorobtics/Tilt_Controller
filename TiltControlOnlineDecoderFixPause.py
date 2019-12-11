@@ -143,6 +143,7 @@ class tiltclass():
             foundevent = False
             collected_ts = False
             calc_psth = False
+            decodeboolean = False
             delay = ((randint(1,50))/100)+ 2
             #Needs x = choose() as shown below
             if int(tilts[i]) == 1:
@@ -167,7 +168,7 @@ class tiltclass():
             ################################################################################################################################################################################################################        
                                                     #Time dependent section. Will include the client and decode here.
             if tiltbool == False:
-                # res = client.get_ts()
+                res = client.get_ts()
                 time.sleep(psthclass.pre_time)
                 task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,data,None,None)
                 # time.sleep(0.010)
@@ -190,25 +191,23 @@ class tiltclass():
                             collected_ts = True
                     # Print information on events
                     if t.Type == PL_ExtEventType:
-                        print(('Event Ts: {}s Ch: {} Type: {}').format(t.TimeStamp, t.Channel, t.Type))
                         if t.Channel == 257 and foundevent == False: #Channel for Strobed Events.
+                            print(('Event Ts: {}s Ch: {} Unit: {}').format(t.TimeStamp, t.Channel, t.Unit))
                             print('event')
                             psthclass.event(t.TimeStamp, t.Unit)
                             foundevent = True
                             task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
 
             if calc_psth == False and collected_ts == True:
-                psthclass.psth(True)
+                psthclass.psth(True, baseline_recording)
                 if baseline_recording == False:
-                    psthclass.psth(False)
+                    psthclass.psth(False, baseline_recording)
                 calc_psth = True
 
             if baseline_recording == False and foundevent == True and collected_ts == True:
-                decodeboolean = False
-                while decodeboolean == False:
-                    decoderesult = psthclass.decode()
-                    print('decode')
-                    decodeboolean = True
+                decoderesult = psthclass.decode()
+                print('decode')
+                decodeboolean = True
                 ####
                 if decoderesult == True: #Change statement later for if the decoder is correct.
                     taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.reward,None,None)
@@ -228,7 +227,7 @@ class tiltclass():
             return False
         except KeyboardInterrupt:
             if tiltbool == False:
-                # res = client.get_ts()
+                res = client.get_ts()
                 time.sleep(psthclass.pre_time)
                 task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,data,None,None)
                 # time.sleep(0.010)
@@ -255,9 +254,9 @@ class tiltclass():
                             task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
 
             if calc_psth == False and collected_ts == True:
-                psthclass.psth(True)
+                psthclass.psth(True, baseline_recording)
                 if baseline_recording == False:
-                    psthclass.psth(False)
+                    psthclass.psth(False, baseline_recording)
                 calc_psth = True
 
             if baseline_recording == False and foundevent == True and collected_ts == True:
@@ -328,7 +327,7 @@ if __name__ == "__main__":
     bin_size = 0.020 #seconds
     # pre_total_bins = 200 #bins
     # post_total_bins = 200 #bins
-    baseline_recording = True   # Set this to True if this is the Baseline Recording
+    baseline_recording = False   # Set this to True if this is the Baseline Recording
                                 # False if you have a template to load
     psthclass = PSTH(channel_dict, pre_time, post_time, bin_size)
     tilter = tiltclass()
@@ -443,8 +442,8 @@ if __name__ == "__main__":
         print('Stop Plexon Recording.')
         task.StopTask()
         sensors.terminate()
-        psthclass.psthtemplate()
         client.close_client()
+        psthclass.psthtemplate()
         psthclass.savetemplate()
         if baseline_recording == False:
             print('actual events:y axis, predicted events:x axis')

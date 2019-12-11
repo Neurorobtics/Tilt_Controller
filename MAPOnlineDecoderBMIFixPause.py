@@ -57,7 +57,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
             return False
 
 
-    def psth(self, json_template):
+    def psth(self, json_template, baseline_recording):
         ### Create relative response from population on given trial
         ### Relative response dimensions:
         ### unit:total bins #population: units * total bins
@@ -84,8 +84,8 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                         else:
                             self.pop_total_response[self.current_event].extend(pop_trial_response)
                         self.pop_current_response = pop_trial_response
-
-            self.unit_dict = self.unit_dict_template #Reset unit_dict to save computational time later
+            if baseline_recording == True:
+                self.unit_dict = self.unit_dict_template #Reset unit_dict to save computational time later
         else: #Decoding psth
             json_pop_trial_response = []
             self.json_index = 0
@@ -93,13 +93,13 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
             self.json_population_response = []
             for chan in self.json_template_unit_dict:
                 for unit in self.json_template_unit_dict[chan]:
-                    unit_ts = numpy.asarray(self.json_template_unit_dict[chan][unit], dtype = 'float')
+                    unit_ts = numpy.asarray(self.unit_dict[chan][unit], dtype = 'float')
                     trial_ts = self.current_ts
                     offset_ts = unit_ts - trial_ts
                     offset_ts = [Decimal(x).quantize(Decimal('1.0000')) for x in offset_ts]
-                    self.binned_response = numpy.histogram(numpy.asarray(offset_ts, dtype='float'), self.total_bins, range = (0, self.post_time))[0]
-                    self.json_population_response.extend(self.binned_response)
-                    #self.json_population_response[(self.total_bins*self.json_index):(self.total_bins*(self.json_index+1))] = self.binned_response   #### These values will give the total bins (currently: 5) for each neuron (unit)
+                    self.json_template_binned_response = numpy.histogram(numpy.asarray(offset_ts, dtype='float'), self.total_bins, range = (0, self.post_time))[0]
+                    self.json_population_response.extend(self.json_template_binned_response)
+                    #self.json_population_response[(self.total_bins*self.json_index):(self.total_bins*(self.json_index+1))] = self.json_template_binned_response   #### These values will give the total bins (currently: 5) for each neuron (unit)
                     json_pop_trial_response = [x for x in self.json_population_response]
                     self.json_index = self.json_index + 1
                     if self.json_index == self.json_template_total_units:
@@ -109,7 +109,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                             self.json_template_pop_total_response[self.current_event].extend(json_pop_trial_response)
                         self.json_template_pop_current_response = json_pop_trial_response
 
-            self.json_template_unit_dict = self.json_template_unit_dict_template #Reset unit_dict to save computational time later
+            self.unit_dict = self.unit_dict_template #Reset unit_dict to save computational time later
 
     def psthtemplate(self): #Reshape into PSTH format Trials x (Neurons x Bins) Used at the end of all trials.
         #Counts the events
@@ -309,10 +309,10 @@ if __name__ =='__main__':
                         foundevent = True
 
             if calc_psth == False and collected_ts == True:
-                psthclass.psth(True)
+                psthclass.psth(True, baseline_recording)
                 calc_psth = True
                 if baseline_recording == False:
-                    psthclass.psth(False)
+                    psthclass.psth(False, baseline_recording)
 
                 if baseline_recording == False:
                     psthclass.decode()
