@@ -42,7 +42,7 @@ def LoadCellThread():
     Chan_list = ["Dev6/ai18", "Dev6/ai19", "Dev6/ai20", "Dev6/ai21", "Dev6/ai22", "Dev6/ai23","Dev6/ai32", "Dev6/ai33", "Dev6/ai34", "Dev6/ai35", "Dev6/ai36", "Dev6/ai37","Dev6/ai38", "Dev6/ai39", "Dev6/ai48", "Dev6/ai49", "Dev6/ai50", "Dev6/ai51", "Strobe", "Start", "Inclinometer", 'Timestamp']
     with nidaqmx.Task() as task:
         #######################################################
-        sheetName = 'CSM014_1212019_Week2SCI_tilt_bmiday1_session2' #CSM014_12092019_Week2SCI_tilt_openloop3
+        sheetName = 'dummy' #CSM014_12092019_Week2SCI_tilt_openloop3
         #######################################################
         with open(sheetName + '.csv','w+',newline='') as f:
             ###Initialize AI Voltage Channels to record from
@@ -181,7 +181,6 @@ class tiltclass():
             
             while foundevent == False or collected_ts == False:
                 res = client.get_ts()
-
                 # Print information on the data returned
                 for t in res: #50ms
                     # Print information on spike channel 1
@@ -198,7 +197,8 @@ class tiltclass():
                             print('event')
                             psthclass.event(t.TimeStamp, t.Unit)
                             foundevent = True
-
+            
+            print('found event and collected ts')
             if calc_psth == False and collected_ts == True:
                 psthclass.psth(True, baseline_recording)
                 if baseline_recording == False:
@@ -224,8 +224,9 @@ class tiltclass():
             task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
             print('delay')
             time.sleep(delay) ############################################# delay--- can keep this
-            if decoderesult == True:
-                time.sleep(0.5)
+            if baseline_recording == False:
+                if decoderesult == True:
+                    time.sleep(0.5)
 
             return False
         except KeyboardInterrupt:
@@ -281,8 +282,9 @@ class tiltclass():
             task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
             print('delay')
             time.sleep(delay) ############################################# delay--- can keep this
-            if decoderesult == True:
-                time.sleep(0.5)
+            if baseline_recording == False:
+                if decoderesult == True:
+                    time.sleep(0.5)
             return True
 
     ##    except KeyboardInterrupt:
@@ -443,8 +445,10 @@ if __name__ == "__main__":
         if baseline_recording == False:
             print('actual events:y axis, predicted events:x axis')
             print(confusion_matrix(psthclass.event_number_list,psthclass.decoder_list))
+            print('Stop Plexon Recording.')
         else:
             print('no conf mat')
+            print('Stop Plexon Recording.')
         while  endgame < 4:
             endgame = loop.waitforend()
         stop_time = time.time()
@@ -455,3 +459,4 @@ if __name__ == "__main__":
 
 
     print('Done')
+    

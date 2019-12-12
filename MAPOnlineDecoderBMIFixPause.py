@@ -56,6 +56,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
     def event(self, event_ts, event_unit):
         #Need to check that it's not a duplicate event...
         if (event_ts - self.current_ts) > 1:
+            print('event def')
             self.event_count = self.event_count + 1                             #Total count of events (number of events that occurred)
             self.current_ts = event_ts                                          #Timestamp of the current event
             self.current_event = event_unit                                     #Event number of the current event
@@ -128,7 +129,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
 
         for event in self.pop_total_response.keys():
             self.psth_templates[event] = numpy.reshape(self.pop_total_response[event],(self.event_number_count[event], self.total_units*self.total_bins))
-            self.psth_templates[event] = self.psth_templates[event].sum(axis = 0) / len(self.event_number_count[event]) 
+            self.psth_templates[event] = self.psth_templates[event].sum(axis = 0) / self.event_number_count[event]
             self.psth_templates[event] = [x for x in self.psth_templates[event]]
     
     def decode(self):
