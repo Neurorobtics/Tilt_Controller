@@ -6,7 +6,7 @@ import numpy
 from decimal import Decimal
 from collections import Counter
 import json
-
+import copy
 #TODO: CSV for channels. Include post time window of event. Need to save population response (dict? key as event_count) from an event  so that they are all saved.
 class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which has wanted units and will catch timestamps from plexon.
     def __init__(self, channel_dict, pre_time, post_time, bin_size):
@@ -14,9 +14,9 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
         self.post_time = post_time
         self.bin_size = bin_size
         self.total_bins = int((post_time) / bin_size) #bins
-        self.channel_dict = channel_dict
+        self.channel_dict = copy.deepcopy(channel_dict)
         self.json_template_channel_dict = {}
-        self.total_channel_dict = channel_dict
+        self.total_channel_dict = copy.deepcopy(channel_dict)
         self.unit_dict = {}
         self.total_unit_dict = {}
         self.pop_total_response = {}
@@ -44,13 +44,13 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                 self.unit_dict[chan][unit] = []
                 self.total_units = self.total_units + 1
 
-        self.unit_dict_template = self.unit_dict
+        self.unit_dict_template = copy.deepcopy(self.unit_dict)
         # print('unit_dict', self.unit_dict) 
     ###### build_unit will be used to gather timestamps from plexon and add them to the unit_dict which will be used to compare psth formats, etc.
     def build_unit(self, tmp_channel, tmp_unit, tmp_timestamp):
-        if tmp_channel in psthclass.channel_dict.keys() and tmp_unit in psthclass.channel_dict[t.Channel]:
+        if tmp_channel in self.channel_dict.keys() and tmp_unit in self.channel_dict[tmp_channel]:
             self.unit_dict[tmp_channel][tmp_unit].append(Decimal(tmp_timestamp).quantize(Decimal('1.0000')))
-        if tmp_channel in psthclass.json_template_channel_dict.keys() and tmp_unit in psthclass.json_template_channel_dict[t.Channel]:
+        if tmp_channel in self.json_template_channel_dict.keys() and tmp_unit in self.json_template_channel_dict[tmp_channel]:
             self.json_template_unit_dict[tmp_channel][tmp_unit].append(Decimal(tmp_timestamp).quantize(Decimal('1.0000')))
 
     def event(self, event_ts, event_unit):
@@ -94,7 +94,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                             self.pop_total_response[self.current_event].extend(pop_trial_response)
                         self.pop_current_response = pop_trial_response
 
-            self.unit_dict = self.unit_dict_template #Reset unit_dict to save computational time later
+            self.unit_dict = copy.deepcopy(self.unit_dict_template) #Reset unit_dict to save computational time later
         else: #Decoding psth
             json_pop_trial_response = []
             self.json_index = 0
@@ -118,7 +118,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                             self.json_template_pop_total_response[self.current_event].extend(json_pop_trial_response)
                         self.json_template_pop_current_response = json_pop_trial_response
 
-            self.json_template_unit_dict = self.json_template_unit_dict_template #Reset unit_dict to save computational time later
+            self.json_template_unit_dict = copy.deepcopy(self.json_template_unit_dict_template) #Reset unit_dict to save computational time later
 
     def psthtemplate(self): #Reshape into PSTH format Trials x (Neurons x Bins) Used at the end of all trials.
         #Counts the events
@@ -128,25 +128,26 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
 
         for event in self.pop_total_response.keys():
             self.psth_templates[event] = numpy.reshape(self.pop_total_response[event],(self.event_number_count[event], self.total_units*self.total_bins))
-            self.psth_templates[event] = self.psth_templates[event].sum(axis = 0) / len(self.psth_templates[event])
+            self.psth_templates[event] = self.psth_templates[event].sum(axis = 0) / len(self.event_number_count[event]) 
             self.psth_templates[event] = [x for x in self.psth_templates[event]]
     
     def decode(self):
         tic = time.time()
         for i in self.loaded_psth_templates.keys():
             for j in range(self.json_template_total_units*self.total_bins):
-                # try:
-                self.euclidean_dists[i][j] = ((self.json_template_pop_current_response[j] - self.loaded_psth_templates[i][j])**2)**0.5
-                # except:
-                #     print('bin', self.binned_response)
-                #     print('pop bin', self.json_population_response)
-                #     # print('j', j)
-                #     # print('length pop_current_response', len(self.json_template_pop_current_response))
-                #     # print('json_temp pop current resp', self.json_template_pop_current_response)
-                #     # print('pop resp', self.json_population_response)
-                #     # print('length loaded template i:',len(self.loaded_psth_templates[i]))
-                #     # print('psth temps', self.loaded_psth_templates[i])
-                #     break
+                try:
+                    self.euclidean_dists[i][j] = ((self.json_template_pop_current_response[j] - self.loaded_psth_templates[i][j])**2)**0.5
+                except:
+                    print('bin', self.binned_response)
+                    print('pop bin', self.json_population_response)
+                    print('i', i)
+                    print('j', j)
+                    print('length pop_current_response', len(self.json_template_pop_current_response))
+                    print('json_temp pop current resp', self.json_template_pop_current_response)
+                    print('pop resp', self.json_population_response)
+                    print('length loaded template i:',len(self.loaded_psth_templates[i]))
+                    print('psth temps', self.loaded_psth_templates[i])
+                    break
                     
             self.sum_euclidean_dists[i] = sum(self.euclidean_dists[i])
         decoder_key = int(min(self.sum_euclidean_dists.keys(), key= (lambda k: self.sum_euclidean_dists[k])))
@@ -244,7 +245,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                 zero_matrix = [x for x in zero]
                 self.euclidean_dists[i] = zero_matrix
                 self.sum_euclidean_dists[i] = []
-        self.json_template_unit_dict_template = self.json_template_unit_dict
+        self.json_template_unit_dict_template = copy.deepcopy(self.json_template_unit_dict)
         # print('json_template_unit_dict_template', self.json_template_unit_dict_template)
 
         for chan, unit_list in self.json_template_channel_dict.items():
@@ -269,11 +270,11 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
 if __name__ =='__main__':
     # Create instance of API class
     # New Format to compare Channel and Unit. 0 is unsorted. Channels are Dict Keys, Units are in each list.
-    channel_dict = {1: [1,2,3], 2: [1,2], 3: [1,2,3], 4: [1,2,3],
-                6: [1,2,3,4], 7: [1,2,3,4], 8: [1,2,3],
-                9: [1,2], 10: [1],
-                13: [1,2,3], 14: [1,2,3,4], 15: [1,2,3], 16: [1,2],
-                18: [1,2,3], 19: [1], 20: [1,2,3,4],
+    channel_dict = {1: [1,2], 2: [1,2], 3: [1,2,3], 4: [1,2,3],
+                6: [1,2], 7: [1,2,3,4], 8: [1,2,3,4],
+                9: [1,2,3], 10: [1,2],
+                13: [1,2,3], 14: [1,2,3,4], 15: [1,2,3], 16: [1,2,3],
+                18: [1], 19: [1,2], 20: [1,2,3,4],
                 25: [1,2,3], 26: [1], 27: [1], 28: [1],
                 29: [1], 31: [1], 32: [1]}
     pre_time = 0.200 #seconds (This value is negative or whatever you put, ex: put 0.200 for -200 ms)

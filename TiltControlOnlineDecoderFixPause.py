@@ -42,7 +42,7 @@ def LoadCellThread():
     Chan_list = ["Dev6/ai18", "Dev6/ai19", "Dev6/ai20", "Dev6/ai21", "Dev6/ai22", "Dev6/ai23","Dev6/ai32", "Dev6/ai33", "Dev6/ai34", "Dev6/ai35", "Dev6/ai36", "Dev6/ai37","Dev6/ai38", "Dev6/ai39", "Dev6/ai48", "Dev6/ai49", "Dev6/ai50", "Dev6/ai51", "Strobe", "Start", "Inclinometer", 'Timestamp']
     with nidaqmx.Task() as task:
         #######################################################
-        sheetName = 'dummy' #CSM014_12092019_Week2SCI_tilt_openloop3
+        sheetName = 'CSM014_1212019_Week2SCI_tilt_bmiday1_session2' #CSM014_12092019_Week2SCI_tilt_openloop3
         #######################################################
         with open(sheetName + '.csv','w+',newline='') as f:
             ###Initialize AI Voltage Channels to record from
@@ -144,7 +144,7 @@ class tiltclass():
             collected_ts = False
             calc_psth = False
             decodeboolean = False
-            delay = ((randint(1,50))/100)+ 2
+            delay = ((randint(1,50))/100)+ 1.5
             #Needs x = choose() as shown below
             if int(tilts[i]) == 1:
                 data = self.tilt1
@@ -198,7 +198,6 @@ class tiltclass():
                             print('event')
                             psthclass.event(t.TimeStamp, t.Unit)
                             foundevent = True
-                            task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
 
             if calc_psth == False and collected_ts == True:
                 psthclass.psth(True, baseline_recording)
@@ -225,6 +224,8 @@ class tiltclass():
             task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
             print('delay')
             time.sleep(delay) ############################################# delay--- can keep this
+            if decoderesult == True:
+                time.sleep(0.5)
 
             return False
         except KeyboardInterrupt:
@@ -253,7 +254,6 @@ class tiltclass():
                             print('event')
                             psthclass.event(t.TimeStamp, t.Unit)
                             foundevent = True
-                            task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
 
             if calc_psth == False and collected_ts == True:
                 psthclass.psth(True, baseline_recording)
@@ -262,25 +262,27 @@ class tiltclass():
                 calc_psth = True
 
             if baseline_recording == False and foundevent == True and collected_ts == True:
-                while decodeboolean == False:
+                if decodeboolean == False:
                     decoderesult = psthclass.decode()
                     print('decode')
                     decodeboolean = True
                 ####
-                if decoderesult == True: #Change statement later for if the decoder is correct.
-                    taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.reward,None,None)
-                    task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.wateron,None,None)
-                    time.sleep(self.WaterDuration)##### water duration --- can keep this
-                    task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
-                    taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
-                else: ###This will be if decoder is false, have to deal with punishment tilt.
-                    taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.punish,None,None) 
-                    time.sleep(self.WaterDuration)
-                    taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
-                    time.sleep(2)
+                    if decoderesult == True: #Change statement later for if the decoder is correct.
+                        taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.reward,None,None)
+                        task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.wateron,None,None)
+                        time.sleep(self.WaterDuration)##### water duration --- can keep this
+                        task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
+                        taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
+                    else: ###This will be if decoder is false, have to deal with punishment tilt.
+                        taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.punish,None,None) 
+                        time.sleep(self.WaterDuration)
+                        taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
+                        time.sleep(2)
             task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
             print('delay')
             time.sleep(delay) ############################################# delay--- can keep this
+            if decoderesult == True:
+                time.sleep(0.5)
             return True
 
     ##    except KeyboardInterrupt:
@@ -308,22 +310,13 @@ def choose():
 if __name__ == "__main__":
     # Create instance of API class
     # New Format to compare Channel and Unit. 0 is unsorted. Channels are Dict Keys, Units are in each list.
-    channel_dict = {1: [1,2,3,4], 2: [1,2,3,4], 3: [1,2,3,4], 4: [1,2,3,4],
-                    5: [1,2,3,4], 6: [1,2,3,4], 7: [1,2,3,4], 8: [1,2,3,4],
-                    9: [1,2,3,4], 10: [1,2,3,4], 11: [1,2,3,4], 12: [1,2,3,4],
-                    13: [1,2,3,4], 14: [1,2,3,4], 15: [1,2,3,4], 16: [1,2,3,4],
-                    17: [1,2,3,4], 18: [1,2,3,4], 19: [1,2,3,4], 20: [1,2,3,4],
-                    21: [1,2,3,4], 22: [1,2,3,4], 23: [1,2,3,4], 24: [1,2,3,4],
-                    25: [1,2,3,4], 26: [1,2,3,4], 27: [1,2,3,4], 28: [1,2,3,4],
-                    29: [1,2,3,4], 30: [1,2,3,4], 31: [1,2,3,4], 32: [1,2,3,4],
-                    33: [1,2,3,4], 34: [1,2,3,4], 35: [1,2,3,4], 36: [1,2,3,4],
-                    37: [1,2,3,4], 38: [1,2,3,4], 39: [1,2,3,4], 40: [1,2,3,4],
-                    41: [1,2,3,4], 42: [1,2,3,4], 43: [1,2,3,4], 44: [1,2,3,4],
-                    45: [1,2,3,4], 46: [1,2,3,4], 47: [1,2,3,4], 48: [1,2,3,4],
-                    49: [1,2,3,4], 50: [1,2,3,4], 51: [1,2,3,4], 52: [1,2,3,4],
-                    53: [1,2,3,4], 54: [1,2,3,4], 55: [1,2,3,4], 56: [1,2,3,4],
-                    57: [1,2,3,4], 58: [1,2,3,4], 59: [1,2,3,4], 60: [1,2,3,4],
-                    61: [1,2,3,4], 62: [1,2,3,4], 63: [1,2,3,4], 64: [1,2,3,4]}
+    channel_dict = {1: [1,2], 2: [1,2], 3: [1,2,3], 4: [1,2,3],
+                6: [1,2], 7: [1,2,3,4], 8: [1,2,3,4],
+                9: [1,2,3], 10: [1,2],
+                13: [1,2,3], 14: [1,2,3,4], 15: [1,2,3], 16: [1,2,3],
+                18: [1], 19: [1,2], 20: [1,2,3,4],
+                25: [1,2,3], 26: [1], 27: [1], 28: [1],
+                29: [1], 31: [1], 32: [1]}
     pre_time = 0.200 #seconds (This value is negative or whatever you put, ex: put 0.200 for -200 ms)
     post_time = 0.200 #seconds
     bin_size = 0.020 #seconds
