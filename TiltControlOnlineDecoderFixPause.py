@@ -42,7 +42,7 @@ def LoadCellThread():
     Chan_list = ["Dev6/ai18", "Dev6/ai19", "Dev6/ai20", "Dev6/ai21", "Dev6/ai22", "Dev6/ai23","Dev6/ai32", "Dev6/ai33", "Dev6/ai34", "Dev6/ai35", "Dev6/ai36", "Dev6/ai37","Dev6/ai38", "Dev6/ai39", "Dev6/ai48", "Dev6/ai49", "Dev6/ai50", "Dev6/ai51", "Strobe", "Start", "Inclinometer", 'Timestamp']
     with nidaqmx.Task() as task:
         #######################################################
-        sheetName = 'dummy' #CSM014_12092019_Week2SCI_tilt_openloop3
+        sheetName = 'csm014_12122019_Week2SCI_tilt_BMIDay1' #CSM014_12092019_Week2SCI_tilt_openloop3
         #######################################################
         with open(sheetName + '.csv','w+',newline='') as f:
             ###Initialize AI Voltage Channels to record from
@@ -444,7 +444,13 @@ if __name__ == "__main__":
         psthclass.savetemplate()
         if baseline_recording == False:
             print('actual events:y axis, predicted events:x axis')
-            print(confusion_matrix(psthclass.event_number_list,psthclass.decoder_list))
+            confusion_matrix_calc = confusion_matrix(psthclass.event_number_list,psthclass.decoder_list)
+            print(confusion_matrix_calc)
+            correct_trials = 0
+            for i in range(0,len(confusion_matrix_calc)):
+                correct_trials = correct_trials + confusion_matrix_calc[i][i]
+            decoder_accuracy = correct_trials / len(psthclass.event_number_list)
+            print(('Accuracy = {} / {} = {}').format(correct_trials, len(psthclass.event_number_list), decoder_accuracy))
             print('Stop Plexon Recording.')
         else:
             print('no conf mat')

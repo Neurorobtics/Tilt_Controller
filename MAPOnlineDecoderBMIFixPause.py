@@ -138,7 +138,7 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
         for i in self.loaded_psth_templates.keys():
             for j in range(self.json_template_total_units*self.total_bins):
                 # try:
-                self.euclidean_dists[i][j] = ((self.json_template_pop_current_response[j] - self.loaded_psth_templates[i][j])**2)) #**0.5 , moved square root to the end.
+                self.euclidean_dists[i][j] = (self.json_template_pop_current_response[j] - self.loaded_psth_templates[i][j])**2 #**0.5 , moved square root to the end.
                 # except:
                 #     print('bin', self.binned_response)
                 #     print('pop bin', self.json_population_response)
@@ -150,14 +150,14 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
                 #     print('length loaded template i:',len(self.loaded_psth_templates[i]))
                 #     print('psth temps', self.loaded_psth_templates[i])
                 #     break
-                    
+
             self.sum_euclidean_dists[i] = (sum(self.euclidean_dists[i]))**0.5 #Moved square root to here. from inside loop above.
         decoder_key = int(min(self.sum_euclidean_dists.keys(), key= (lambda k: self.sum_euclidean_dists[k])))
         self.decoder_list.append(decoder_key)
         toc = time.time() - tic
         self.decoder_times.append(toc)
-
-
+        print(self.sum_euclidean_dists)
+        print(decoder_key)
         #print('decoder key:', decoder_key)
         #print('min dist:', self.sum_euclidean_dists[decoder_key])
         if decoder_key == self.current_event:
