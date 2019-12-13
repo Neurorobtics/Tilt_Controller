@@ -137,21 +137,21 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
         tic = time.time()
         for i in self.loaded_psth_templates.keys():
             for j in range(self.json_template_total_units*self.total_bins):
-                try:
-                    self.euclidean_dists[i][j] = ((self.json_template_pop_current_response[j] - self.loaded_psth_templates[i][j])**2)**0.5
-                except:
-                    print('bin', self.binned_response)
-                    print('pop bin', self.json_population_response)
-                    print('i', i)
-                    print('j', j)
-                    print('length pop_current_response', len(self.json_template_pop_current_response))
-                    print('json_temp pop current resp', self.json_template_pop_current_response)
-                    print('pop resp', self.json_population_response)
-                    print('length loaded template i:',len(self.loaded_psth_templates[i]))
-                    print('psth temps', self.loaded_psth_templates[i])
-                    break
+                # try:
+                self.euclidean_dists[i][j] = ((self.json_template_pop_current_response[j] - self.loaded_psth_templates[i][j])**2)) #**0.5 , moved square root to the end.
+                # except:
+                #     print('bin', self.binned_response)
+                #     print('pop bin', self.json_population_response)
+                #     print('i', i)
+                #     print('j', j)
+                #     print('length pop_current_response', len(self.json_template_pop_current_response))
+                #     print('json_temp pop current resp', self.json_template_pop_current_response)
+                #     print('pop resp', self.json_population_response)
+                #     print('length loaded template i:',len(self.loaded_psth_templates[i]))
+                #     print('psth temps', self.loaded_psth_templates[i])
+                #     break
                     
-            self.sum_euclidean_dists[i] = sum(self.euclidean_dists[i])
+            self.sum_euclidean_dists[i] = (sum(self.euclidean_dists[i]))**0.5 #Moved square root to here. from inside loop above.
         decoder_key = int(min(self.sum_euclidean_dists.keys(), key= (lambda k: self.sum_euclidean_dists[k])))
         self.decoder_list.append(decoder_key)
         toc = time.time() - tic
