@@ -1,3 +1,4 @@
+# TiltContol Online Decoder 12/13/2019 Working, check good / bad neurons to improve accuracy
 import definitions
 from definitions import *
 import threading
@@ -9,7 +10,7 @@ import csv
 import TestRunwLoadCells
 from TestRunwLoadCells import *
 from sklearn.metrics import confusion_matrix
-from MAPOnlineDecoderBMI import *
+from MAPOnlineDecoderBMIFixPause import *
 ### TO TEST: HOW PAUSE WORKS, CHECK PRINT STATEMENTS ARE CORRECT, WHILE LOOP IS WORKING, EACH TIME.SLEEP IS CHANGED TO A DURATION
 
 ##Parameters:0
@@ -41,7 +42,7 @@ def LoadCellThread():
     Chan_list = ["Dev6/ai18", "Dev6/ai19", "Dev6/ai20", "Dev6/ai21", "Dev6/ai22", "Dev6/ai23","Dev6/ai32", "Dev6/ai33", "Dev6/ai34", "Dev6/ai35", "Dev6/ai36", "Dev6/ai37","Dev6/ai38", "Dev6/ai39", "Dev6/ai48", "Dev6/ai49", "Dev6/ai50", "Dev6/ai51", "Strobe", "Start", "Inclinometer", 'Timestamp']
     with nidaqmx.Task() as task:
         #######################################################
-        sheetName = 'dummy' #csm015_112019_baseline_tilt_nohaptic_loadcell #csm013_12032019_week1sci_openloop_righthemisphere_tilt_nohaptic
+        sheetName = 'csm014_12122019_Week2SCI_tilt_BMIDay1' #CSM014_12092019_Week2SCI_tilt_openloop3
         #######################################################
         with open(sheetName + '.csv','w+',newline='') as f:
             ###Initialize AI Voltage Channels to record from
@@ -137,97 +138,154 @@ class tiltclass():
 
     
     def tilt(self,i,task,taskinterrupt,tilts,psthclass,client,baseline_recording):  
-        delay = ((randint(1,50))/100)+ 2     
-        #Needs x = choose() as shown below
-        if int(tilts[i]) == 1:
-            data = self.tilt1
-            data2 = self.start1
-        elif int(tilts[i]) == 2:
-            data = self.tilt3
-            data2 = self.start3
-        elif int(tilts[i]) == 3:
-            data = self.tilt4
-            data2 = self.start4
-        elif int(tilts[i]) == 4:
-            data = self.tilt6
-            data2 = self.start6
-        print(data)
-        print(i)
-        print(tilts[i])
-        #Reduce the timestamps in buffer and wait for pretime to add to buffer.
-        res = client.get_ts()
-        time.sleep(psthclass.pre_time)
-        
-
-    ################################################################################################################################################################################################################        
-                                            #Time dependent section. Will include the client and decode here.
-        tiltbegintime = time.time()
-        tiltwaittime = time.time() - tiltbegintime
-        task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,data,None,None)
-        time.sleep(0.010)
-        task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,data2,None,None)
-        time.sleep(psthclass.post_time)
-        time.sleep(0.075)
-        # Get accumulated timestamps
-        foundevent = False
-        while foundevent == False:
-            res = client.get_ts()
-
-            # Print information on the data returned
-            for t in res: #50ms
-                # Print information on spike channel 1
-                if t.Type == PL_SingleWFType and t.Channel in psthclass.channel_dict.keys() and t.Unit in psthclass.channel_dict[t.Channel]:
-                    psthclass.build_unit(t.Channel,t.Unit,t.TimeStamp)
-                # Print information on events
-                if t.Type == PL_ExtEventType:
-                    #print(('Event Ts: {}s Ch: {} Type: {}').format(t.TimeStamp, t.Channel, t.Type))
-                    if t.Channel == 257 and foundevent == False: #Channel for Strobed Events.
-                        print('event')
-                        psthclass.event(t.TimeStamp, t.Unit)
-                        psthclass.psth(True)
-                        psthclass.psth(False)
-                        foundevent = True
-
-                    
-        if baseline_recording == False and foundevent == True:
+        try:
+            tiltbool = False
+            foundevent = False
+            collected_ts = False
+            calc_psth = False
             decodeboolean = False
-            while decodeboolean == False:
+            delay = ((randint(1,50))/100)+ 1.5
+            #Needs x = choose() as shown below
+            if int(tilts[i]) == 1:
+                data = self.tilt1
+                data2 = self.start1
+            elif int(tilts[i]) == 2:
+                data = self.tilt3
+                data2 = self.start3
+            elif int(tilts[i]) == 3:
+                data = self.tilt4
+                data2 = self.start4
+            elif int(tilts[i]) == 4:
+                data = self.tilt6
+                data2 = self.start6
+            print(data)
+            print(i)
+            print(tilts[i])
+            #Reduce the timestamps in buffer and wait for pretime to add to buffer.
 
-                print('decode')
-                decoderesult = psthclass.decode()
-                decodeboolean = True
-
-##                    print('no neurons yet')
-##                    res = client.get_ts()
-##                    for t in res: #50ms
-##                        # Print information on spike channel 1
-##                        if t.Type == PL_SingleWFType and t.Channel in psthclass.channel_dict.keys() and t.Unit in psthclass.channel_dict[t.Channel]:
-##                            psthclass.build_unit(t.Channel,t.Unit,t.TimeStamp)
-##                        # Print information on events
-##                        if t.Type == PL_ExtEventType:
-##                            #print(('Event Ts: {}s Ch: {} Type: {}').format(t.TimeStamp, t.Channel, t.Type))
-##                            if t.Channel == 257 and foundevent == False: #Channel for Strobed Events.
-##                                print('event')
-##                                psthclass.event(t.TimeStamp, t.Unit)
-##                                psthclass.psth()
-##                                foundevent = True
                 
-            ####
-            if decoderesult == True: #Change statement later for if the decoder is correct.
-                taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.reward,None,None)
-                task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.wateron,None,None)
-                time.sleep(self.WaterDuration)##### water duration --- can keep this
-                task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
-                taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
-            else: ###This will be if decoder is false, have to deal with punishment tilt.
-                taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.punish,None,None) 
-                time.sleep(self.WaterDuration)
-                taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
-                time.sleep(2)
-        task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
-        print('delay')
-        time.sleep(delay) ############################################# delay--- can keep this
 
+            ################################################################################################################################################################################################################        
+                                                    #Time dependent section. Will include the client and decode here.
+            if tiltbool == False:
+                res = client.get_ts()
+                time.sleep(psthclass.pre_time)
+                task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,data,None,None)
+                # time.sleep(0.010)
+                # task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,data2,None,None)
+                time.sleep(psthclass.post_time)
+                tiltbool = True
+            time.sleep(0.075)
+            # task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
+            # Get accumulated timestamps
+            
+            while foundevent == False or collected_ts == False:
+                res = client.get_ts()
+                # Print information on the data returned
+                for t in res: #50ms
+                    # Print information on spike channel 1
+                    if t.Type == PL_SingleWFType and t.Channel in psthclass.total_channel_dict.keys() and t.Unit in psthclass.total_channel_dict[t.Channel]:
+                        psthclass.build_unit(t.Channel,t.Unit,t.TimeStamp)
+                        if foundevent == True and t.TimeStamp >= (psthclass.current_ts + psthclass.post_time):
+                            if collected_ts == False:
+                                collected_ts = True
+                                print('collected ts')
+                    # Print information on events
+                    if t.Type == PL_ExtEventType:
+                        if t.Channel == 257 and foundevent == False: #Channel for Strobed Events.
+                            print(('Event Ts: {}s Ch: {} Unit: {}').format(t.TimeStamp, t.Channel, t.Unit))
+                            print('event')
+                            psthclass.event(t.TimeStamp, t.Unit)
+                            foundevent = True
+            
+            print('found event and collected ts')
+            if calc_psth == False and collected_ts == True:
+                psthclass.psth(True, baseline_recording)
+                if baseline_recording == False:
+                    psthclass.psth(False, baseline_recording)
+                calc_psth = True
+
+            if baseline_recording == False and foundevent == True and collected_ts == True:
+                decoderesult = psthclass.decode()
+                print('decode')
+                decodeboolean = True
+                ####
+                if decoderesult == True: #Change statement later for if the decoder is correct.
+                    taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.reward,None,None)
+                    task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.wateron,None,None)
+                    time.sleep(self.WaterDuration)##### water duration --- can keep this
+                    task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
+                    taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
+                else: ###This will be if decoder is false, have to deal with punishment tilt.
+                    taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.punish,None,None) 
+                    time.sleep(self.WaterDuration)
+                    taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
+                    time.sleep(2)
+            task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
+            print('delay')
+            time.sleep(delay) ############################################# delay--- can keep this
+            if baseline_recording == False:
+                if decoderesult == True:
+                    time.sleep(0.5)
+
+            return False
+        except KeyboardInterrupt:
+            if tiltbool == False:
+                res = client.get_ts()
+                time.sleep(psthclass.pre_time)
+                task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,data,None,None)
+                # time.sleep(0.010)
+                # task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,data2,None,None)
+                time.sleep(psthclass.post_time)
+                tiltbool = True
+            while foundevent == False or collected_ts == False:
+                res = client.get_ts()
+
+                # Print information on the data returned
+                for t in res: #50ms
+                    # Print information on spike channel 1
+                    if t.Type == PL_SingleWFType and t.Channel in psthclass.total_channel_dict.keys() and t.Unit in psthclass.total_channel_dict[t.Channel]:
+                        psthclass.build_unit(t.Channel,t.Unit,t.TimeStamp)
+                        if foundevent == True and t.TimeStamp >= (psthclass.current_ts + psthclass.post_time):
+                            collected_ts = True
+                    # Print information on events
+                    if t.Type == PL_ExtEventType:
+                        #print(('Event Ts: {}s Ch: {} Type: {}').format(t.TimeStamp, t.Channel, t.Type))
+                        if t.Channel == 257 and foundevent == False: #Channel for Strobed Events.
+                            print('event')
+                            psthclass.event(t.TimeStamp, t.Unit)
+                            foundevent = True
+
+            if calc_psth == False and collected_ts == True:
+                psthclass.psth(True, baseline_recording)
+                if baseline_recording == False:
+                    psthclass.psth(False, baseline_recording)
+                calc_psth = True
+
+            if baseline_recording == False and foundevent == True and collected_ts == True:
+                if decodeboolean == False:
+                    decoderesult = psthclass.decode()
+                    print('decode')
+                    decodeboolean = True
+                ####
+                    if decoderesult == True: #Change statement later for if the decoder is correct.
+                        taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.reward,None,None)
+                        task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.wateron,None,None)
+                        time.sleep(self.WaterDuration)##### water duration --- can keep this
+                        task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
+                        taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
+                    else: ###This will be if decoder is false, have to deal with punishment tilt.
+                        taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.punish,None,None) 
+                        time.sleep(self.WaterDuration)
+                        taskinterrupt.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
+                        time.sleep(2)
+            task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,self.begin,None,None)
+            print('delay')
+            time.sleep(delay) ############################################# delay--- can keep this
+            if baseline_recording == False:
+                if decoderesult == True:
+                    time.sleep(0.5)
+            return True
 
     ##    except KeyboardInterrupt:
     ##        try:
@@ -254,14 +312,13 @@ def choose():
 if __name__ == "__main__":
     # Create instance of API class
     # New Format to compare Channel and Unit. 0 is unsorted. Channels are Dict Keys, Units are in each list.
-    channel_dict = {1: [1,2,3], 2: [1,2], 3: [1,2,3], 4: [1,2,3],
-                6: [1,2,3,4], 7: [1,2,3,4], 8: [1,2,3],
-                9: [1,2], 10: [1],
-                13: [1,2,3], 14: [1,2,3,4], 15: [1,2,3], 16: [1,2],
-                18: [1,2,3], 19: [1], 20: [1,2,3,4],
+    channel_dict = {1: [1,2], 2: [1,2], 3: [1,2,3], 4: [1,2,3],
+                6: [1,2], 7: [1,2,3,4], 8: [1,2,3,4],
+                9: [1,2,3], 10: [1,2],
+                13: [1,2,3], 14: [1,2,3,4], 15: [1,2,3], 16: [1,2,3],
+                18: [1], 19: [1,2], 20: [1,2,3,4],
                 25: [1,2,3], 26: [1], 27: [1], 28: [1],
-                29: [1], 31: [1], 32: [1],
-                33: [1,2,3,4]}
+                29: [1], 31: [1], 32: [1]}
     pre_time = 0.200 #seconds (This value is negative or whatever you put, ex: put 0.200 for -200 ms)
     post_time = 0.200 #seconds
     bin_size = 0.020 #seconds
@@ -348,8 +405,15 @@ if __name__ == "__main__":
                                                                     #Tilt called here.
     for i in range(0,400):
         try:
-            tilter.tilt(i,task,taskinterrupt,tilts,psthclass,client,baseline_recording)
-            nores = client.get_ts()
+            pausebool = tilter.tilt(i,task,taskinterrupt,tilts,psthclass,client,baseline_recording)
+            if pausebool == True:
+                task.WriteDigitalLines(1,1,10.0,PyDAQmx.DAQmx_Val_GroupByChannel,begin,None,None)
+                print('\nPausing... (Hit ENTER to contrinue, type quit to exit.)')
+                response = input()
+                #nores = client.get_ts()
+                if response == 'quit':
+                    break
+            #nores = client.get_ts()
             time.sleep(0.5)
             if endgame < 3:
                 endgame = loop.run()
@@ -358,7 +422,7 @@ if __name__ == "__main__":
             print('\nPausing... (Hit ENTER to contrinue, type quit to exit.)')
             try:
                 response = input()
-                nores = client.get_ts()
+                #nores = client.get_ts()
                 if response == 'quit':
                     # endgame = 3
                     break
@@ -375,14 +439,22 @@ if __name__ == "__main__":
         print('Stop Plexon Recording.')
         task.StopTask()
         sensors.terminate()
-        psthclass.psthtemplate()
         client.close_client()
+        psthclass.psthtemplate()
         psthclass.savetemplate()
         if baseline_recording == False:
             print('actual events:y axis, predicted events:x axis')
-            print(confusion_matrix(psthclass.event_number_list,psthclass.decoder_list))
+            confusion_matrix_calc = confusion_matrix(psthclass.event_number_list,psthclass.decoder_list)
+            print(confusion_matrix_calc)
+            correct_trials = 0
+            for i in range(0,len(confusion_matrix_calc)):
+                correct_trials = correct_trials + confusion_matrix_calc[i][i]
+            decoder_accuracy = correct_trials / len(psthclass.event_number_list)
+            print(('Accuracy = {} / {} = {}').format(correct_trials, len(psthclass.event_number_list), decoder_accuracy))
+            print('Stop Plexon Recording.')
         else:
             print('no conf mat')
+            print('Stop Plexon Recording.')
         while  endgame < 4:
             endgame = loop.waitforend()
         stop_time = time.time()
@@ -393,5 +465,4 @@ if __name__ == "__main__":
 
 
     print('Done')
-
-
+    
