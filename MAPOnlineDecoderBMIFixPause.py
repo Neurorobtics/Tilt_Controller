@@ -13,13 +13,14 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
         self.pre_time = pre_time
         self.post_time = post_time
         self.bin_size = bin_size
-        self.total_bins = int((post_time) / bin_size) #bins
-        self.channel_dict = copy.deepcopy(channel_dict)
-        self.json_template_channel_dict = {}
-        self.total_channel_dict = copy.deepcopy(channel_dict)
-        self.unit_dict = {}
-        self.total_unit_dict = {}
-        self.pop_total_response = {}
+        self.total_bins = int((post_time) / bin_size)           # Post time bins, used by decoder
+        self.channel_dict = copy.deepcopy(channel_dict)         # Current days channel dictionary, used to create template for the next day
+        self.json_template_channel_dict = {}                    # Loaded Channel Dictionary, used by decoder
+        self.total_channel_dict = copy.deepcopy(channel_dict)   # Copy of channel_dict, channels / units from loaded Channel Dict will be added to this.
+                                                                # total_channel_dict is used to gather spikes from only neurons that we are interested in.
+        self.unit_dict = {}                             # Dict of dicts, takes channels / units from channel_dict and creates a place to store timestamps.
+        self.total_unit_dict = {}                       # Not currently used, similar to unit_dict, but uses the complete set of channels / units from current and decoder day.
+        self.pop_total_response = {}                    # 
         self.json_template_pop_total_response = {}
         self.psth_templates = {}
         self.pop_current_response = []
@@ -288,7 +289,7 @@ if __name__ =='__main__':
     calc_psth = False
     foundevent = False
     collected_ts = False
-    baseline_recording = False # True for Creating a baseline recording.
+    baseline_recording = True # True for Creating a baseline recording.
                                # False to Load a template
     psthclass = PSTH(channel_dict, pre_time, post_time, bin_size)
     
