@@ -1,4 +1,4 @@
-#MAP System Online Decoder 12/13/2019 BMI working, checking good / bad neurons for accuracy
+#MAP System Online Decoder SHAM TEST 12/13/2019 BMI working, checking good / bad neurons for accuracy
 #from pyplexdo import PyPlexDO, DODigitalOutputInfo
 from pyplexclientts import PyPlexClientTSAPI, PL_SingleWFType, PL_ExtEventType
 import time
@@ -272,12 +272,21 @@ class PSTH: ###Initiate PSTH with desired parameters, creates unit_dict which ha
 if __name__ =='__main__':
     # Create instance of API class
     # New Format to compare Channel and Unit. 0 is unsorted. Channels are Dict Keys, Units are in each list.
-    channel_dict = {1: [1], 7: [1,3], 8: [2], 9: [1], 13: [1,3], 14: [2]}
+    channel_dict = {1: [1,2], 2: [1,2], 3: [1,2,3], 4: [1,2,3],
+                6: [1,2], 7: [1,2,3,4], 8: [1,2,3,4],
+                9: [1,2,3], 10: [1,2],
+                13: [1,2,3], 14: [1,2,3,4], 15: [1,2,3], 16: [1,2,3],
+                18: [1], 19: [1,2], 20: [1,2,3,4],
+                25: [1,2,3], 26: [1], 27: [1], 28: [1],
+                29: [1], 31: [1], 32: [1]}
     pre_time = 0.200 #seconds (This value is negative or whatever you put, ex: put 0.200 for -200 ms)
     post_time = 0.200 #seconds
     bin_size = 0.020 #seconds
     # pre_total_bins = 200 #bins
     # post_total_bins = 200 #bins
+    wait_for_timestamps = False
+    calculate_PSTH = False
+    calc_psth = False
     foundevent = False
     collected_ts = False
     baseline_recording = True # True for Creating a baseline recording.
@@ -346,7 +355,7 @@ if __name__ =='__main__':
                         psthclass.event(t.TimeStamp,t.Unit)
                         foundevent = True
 
-            if collected_ts == True:
+            if calc_psth == False and collected_ts == True:
                 psthclass.psth(True, baseline_recording)
                 calc_psth = True
                 if baseline_recording == False:
@@ -354,7 +363,10 @@ if __name__ =='__main__':
 
                 if baseline_recording == False:
                     psthclass.decode()
+                wait_for_timestamps = False
+                calculate_PSTH = False
                 foundevent = False
+                calc_psth = False
                 collected_ts = False
 ##            toc = time.time() - tic
 ##            print('toc: ',toc)
